@@ -53,7 +53,7 @@ impl Gfx for SDL {
     }
 
     fn clear(&mut self, color: Color) -> () {
-        self.canvas.set_draw_color(Color::from_hex(0x0));
+        self.canvas.set_draw_color(color);
         self.canvas.clear();
     }
 

@@ -1,4 +1,9 @@
 
+
+const ROM_HEADER_START: usize = 0x100;
+const ROM_CHECKSUM_START: usize = 0x134;
+const ROM_CHECKSUM_END: usize = 0x14C;
+
 pub struct RomReader<'a> {
     pub start_offset: usize,
     pub rom_data: &'a Vec<u8>,
@@ -6,6 +11,10 @@ pub struct RomReader<'a> {
 
 impl RomReader<'_> {
     pub fn read_bytes(&mut self, size: usize) -> Vec<u8> {
+        if self.start_offset + size > self.rom_data.len() {
+            panic!("Tried to read past the end of the ROM");
+        }
+
         let slice = &self.rom_data[self.start_offset..self.start_offset + size];
         self.start_offset += size;
 
@@ -53,12 +62,12 @@ impl RomHeader {
 
     fn from_rom(rom_bytes: &Vec<u8>) -> Self {
         let mut header = RomHeader::default();
-        let mut reader = RomReader{start_offset: 0, rom_data: rom_bytes};
+        let mut reader = RomReader{start_offset: ROM_HEADER_START, rom_data: rom_bytes};
 
         header.entry = reader.read_bytes(header.entry.len()).try_into().unwrap();
         header.logo = reader.read_bytes(header.logo.len()).try_into().unwrap();
         header.title = reader.read_bytes(header.title.len()).try_into().unwrap();
-        let lic_code = reader.read_bytes(1);
+        let lic_code = reader.read_bytes(2);
         header.new_lic_code = u16::from_be_bytes(lic_code.try_into().unwrap());
         header.sgb_flag = reader.read_bytes(1)[0];
         header.cart_type = reader.read_bytes(1)[0];
@@ -82,8 +91,53 @@ pub struct Cartridge {
 }
 
 impl Cartridge {
-    pub fn new(filename: String, content: Vec<u8>) {
+    pub fn new(filename: String, content: Vec<u8>) -> Self {
         let rom_data = content;
+        let rom_header = RomHeader::from_rom(&rom_data);
 
+        Cartridge {
+            filename,
+            rom_header,
+            rom_data,
+        }
+    }
+
+    pub fn validate_checksum(&self) -> bool {
+        let mut sum: u16 = 0;
+        for byte in &self.rom_data[ROM_CHECKSUM_START..ROM_CHECKSUM_END + 1] {
+            sum = sum.wrapping_sub(*byte as u16).wrapping_sub(1);
+        }
+
+        (sum & 0xff) as u8 == self.rom_header.checksum
+    }
+
+    pub fn read_title(&self) -> String {
+        let title = self.rom_header.title.to_vec();
+        let title = title.split(|&x| x == 0).collect::<Vec<_>>()[0];
+        String::from_utf8(title.to_vec()).unwrap()
+    }
+}
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cartridge() {
+        let filename = "./games/pokemon-y.gbc".to_string();
+        let content = std::fs::read(&filename).unwrap();
+        let cartridge = Cartridge::new(filename, content);
+        assert_eq!(cartridge.read_title(), "POKEMON YELLOW".to_string());
+    }
+
+    #[test]
+    fn test_validate_checksum() {
+        let filename = "./games/pokemon-y.gbc".to_string();
+        let content = std::fs::read(&filename).unwrap();
+        let cartridge = Cartridge::new(filename, content);
+        assert_eq!(cartridge.validate_checksum(), true);
     }
 }

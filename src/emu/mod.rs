@@ -1,13 +1,13 @@
 use std::time::Duration;
+use crate::cartridge::Cartridge;
 use crate::gfx::Gfx;
 use crate::gfx::color::Color;
-mod errors;
 
 pub struct EMU {
     pub paused: bool,
     pub running: bool,
     pub ticks: u64,
-    pub rom: Vec<u8>,
+    pub cartridge: Option<Cartridge>,
     pub gfx: Box<dyn Gfx>,
 }
 
@@ -17,7 +17,7 @@ impl EMU {
             paused: false,
             running: false,
             ticks: 0,
-            rom: vec![],
+            cartridge: None,
             gfx: Box::new(crate::gfx::sdl::SDL::new().unwrap()),
         }
     }
@@ -26,8 +26,10 @@ impl EMU {
         ::std::thread::sleep(Duration::from_millis(duration_ms as u64));
     }
 
-    pub fn load_rom(&mut self, rom: Vec<u8>) {
-        self.rom = rom;
+    pub fn load_game(&mut self, filename: String) {
+        let content = std::fs::read(&filename).unwrap();
+        let cartridge = Cartridge::new(filename, content);
+        self.cartridge = Some(cartridge);
     }
 
     pub fn stop(&mut self) {
@@ -64,8 +66,6 @@ impl EMU {
         self.gfx.init();
         self.gfx.clear(Color::new(0, 0, 0));
         self.gfx.present();
-
-        let mut i = 0;
 
         'running: loop {
             if self.running == false {
