@@ -1,4 +1,4 @@
-
+use sdl2::mouse::SystemCursor::No;
 
 // Addressing modes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,8 +29,7 @@ pub enum AddrMode {
 // Register types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RegType {
-    RtNone = 0,
-    RtA,
+    RtA = 0,
     RtF,
     RtB,
     RtC,
@@ -49,8 +48,7 @@ pub enum RegType {
 // Instruction types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InType {
-    InNone = 0,
-    InNop,
+    InNop = 0,
     InLd,
     InInc,
     InDec,
@@ -103,8 +101,7 @@ pub enum InType {
 // Condition types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CondType {
-    CtNone = 0,
-    CtNz,
+    CtNz = 0,
     CtZ,
     CtNc,
     CtC,
@@ -115,30 +112,30 @@ pub enum CondType {
 pub struct Instruction {
     pub type_: InType,
     pub mode: AddrMode,
-    pub reg_1: RegType,
-    pub reg_2: RegType,
-    pub cond: CondType,
+    pub reg_1: Option<RegType>,
+    pub reg_2: Option<RegType>,
+    pub cond: Option<CondType>,
     pub param: u8,
 }
 
 impl Instruction {
     pub fn new() -> Instruction {
         Instruction {
-            type_: InType::InNone,
+            type_: InType::InNop,
             mode: AddrMode::AmImp,
-            reg_1: RegType::RtNone,
-            reg_2: RegType::RtNone,
-            cond: CondType::CtNone,
+            reg_1: None,
+            reg_2: None,
+            cond: None,
             param: 0,
         }
     }
 
-    pub fn by_opcode(opcode: u8) -> Instruction {
+    pub fn by_opcode(opcode: u8) -> Option<Instruction> {
         if opcode as usize >= INSTRUCTIONS.len() {
-            return Instruction::new();
+            return None;
         }
 
-        INSTRUCTIONS[opcode as usize].unwrap()
+        INSTRUCTIONS[opcode as usize]
     }
 }
 
@@ -148,12 +145,12 @@ macro_rules! create_instructions {
     () => {{
         let mut instructions: [Option<Instruction>; INSTRUCTION_SET_SIZE] = [None; INSTRUCTION_SET_SIZE];
 
-        instructions[0x00] = Some(Instruction { type_: InType::InNop, mode: AddrMode::AmImp,  reg_1: RegType::RtNone, reg_2: RegType::RtNone, cond: CondType::CtNone, param: 0});
-        instructions[0x05] = Some(Instruction { type_: InType::InDec, mode: AddrMode::AmR, reg_1: RegType::RtB, reg_2: RegType::RtNone, cond: CondType::CtNone, param: 0});
-        instructions[0x0E] = Some(Instruction { type_: InType::InLd, mode: AddrMode::AmRD8, reg_1: RegType::RtC, reg_2: RegType::RtNone, cond: CondType::CtNone, param: 0});
-        instructions[0xAF] = Some(Instruction { type_: InType::InXor, mode: AddrMode::AmR, reg_1: RegType::RtA, reg_2: RegType::RtNone, cond: CondType::CtNone, param: 0});
-        instructions[0xC3] = Some(Instruction { type_: InType::InJp, mode: AddrMode::AmD16, reg_1: RegType::RtNone, reg_2: RegType::RtNone, cond: CondType::CtNone, param: 0});
-        instructions[0xF3] = Some(Instruction { type_: InType::InDi, mode: AddrMode::AmImp,  reg_1: RegType::RtNone, reg_2: RegType::RtNone, cond: CondType::CtNone, param: 0});
+        instructions[0x00] = Some(Instruction { type_: InType::InNop, mode: AddrMode::AmImp,  reg_1: None, reg_2: None, cond: None, param: 0});
+        instructions[0x05] = Some(Instruction { type_: InType::InDec, mode: AddrMode::AmR, reg_1: Some(RegType::RtB), reg_2: None, cond: None, param: 0});
+        instructions[0x0E] = Some(Instruction { type_: InType::InLd, mode: AddrMode::AmRD8, reg_1: Some(RegType::RtC), reg_2: None, cond: None, param: 0});
+        instructions[0xAF] = Some(Instruction { type_: InType::InXor, mode: AddrMode::AmR, reg_1: Some(RegType::RtA), reg_2: None, cond: None, param: 0});
+        instructions[0xC3] = Some(Instruction { type_: InType::InJp, mode: AddrMode::AmD16, reg_1: None, reg_2: None, cond: None, param: 0});
+        instructions[0xF3] = Some(Instruction { type_: InType::InDi, mode: AddrMode::AmImp,  reg_1: None, reg_2: None, cond: None, param: 0});
         instructions
     }};
 }

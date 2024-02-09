@@ -1,5 +1,7 @@
 use std::time::Duration;
+use crate::bus::BUS;
 use crate::cartridge::Cartridge;
+use crate::cpu::CPU;
 use crate::gfx::Gfx;
 use crate::gfx::color::Color;
 
@@ -7,9 +9,12 @@ pub struct EMU {
     pub paused: bool,
     pub running: bool,
     pub ticks: u64,
-    pub cartridge: Option<Cartridge>,
+    pub bus: BUS,
+    pub cpu: CPU,
     pub gfx: Box<dyn Gfx>,
 }
+
+pub type FnCycle<'a> = Box<dyn FnMut(u32) + 'a>;
 
 impl EMU {
     pub fn default() -> EMU {
@@ -17,7 +22,8 @@ impl EMU {
             paused: false,
             running: false,
             ticks: 0,
-            cartridge: None,
+            bus: BUS::new(),
+            cpu: CPU::new(),
             gfx: Box::new(crate::gfx::sdl::SDL::new().unwrap()),
         }
     }
@@ -28,8 +34,7 @@ impl EMU {
 
     pub fn load_game(&mut self, filename: String) {
         let content = std::fs::read(&filename).unwrap();
-        let cartridge = Cartridge::new(content).unwrap();
-        self.cartridge = Some(cartridge);
+        self.bus.load_game(content).unwrap();
     }
 
     pub fn stop(&mut self) {
@@ -59,6 +64,21 @@ impl EMU {
         self.gfx.present();
     }
 
+    pub fn cycle(&mut self, cycles: u32) -> () {
+        for _ in 0..cycles {
+            for _ in 0..4 {
+                self.ticks += 1;
+            }
+        }
+    }
+
+    pub fn step_cpu(&mut self) -> () {
+        self.cpu.fetch_instruction(&mut self.bus).unwrap();
+        let cycles = self.cpu.fetch_data(&mut self.bus).unwrap();
+        self.cycle(cycles);
+        self.cpu.execute(&mut self.bus).unwrap();
+    }
+
     pub fn run(&mut self) -> () {
         println!("Running the emulator");
         self.running = true;
@@ -77,6 +97,7 @@ impl EMU {
                 continue 'running;
             }
 
+            self.step_cpu();
             self.emu_loop();
 
             self.ticks += 1;
