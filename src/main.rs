@@ -1,6 +1,9 @@
 mod emu;
 mod gfx;
 mod cartridge;
+mod bus;
+mod cpu;
+mod instructions;
 
 fn main() {
     let mut emu = emu::EMU::default();

@@ -28,7 +28,7 @@ impl EMU {
 
     pub fn load_game(&mut self, filename: String) {
         let content = std::fs::read(&filename).unwrap();
-        let cartridge = Cartridge::new(filename, content);
+        let cartridge = Cartridge::new(content).unwrap();
         self.cartridge = Some(cartridge);
     }
 

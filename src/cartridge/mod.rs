@@ -4,21 +4,27 @@ const ROM_HEADER_START: usize = 0x100;
 const ROM_CHECKSUM_START: usize = 0x134;
 const ROM_CHECKSUM_END: usize = 0x14C;
 
+#[derive(Debug)]
+pub enum CartridgeError {
+    InvalidRomData,
+    ReadFromInvalidAddress,
+}
+
 pub struct RomReader<'a> {
     pub start_offset: usize,
     pub rom_data: &'a Vec<u8>,
 }
 
 impl RomReader<'_> {
-    pub fn read_bytes(&mut self, size: usize) -> Vec<u8> {
+    pub fn read_bytes(&mut self, size: usize) -> Result<Vec<u8>, CartridgeError> {
         if self.start_offset + size > self.rom_data.len() {
-            panic!("Tried to read past the end of the ROM");
+            return Err(CartridgeError::InvalidRomData)
         }
 
         let slice = &self.rom_data[self.start_offset..self.start_offset + size];
         self.start_offset += size;
 
-        slice.to_vec()
+        Ok(slice.to_vec())
     }
 }
 
@@ -60,46 +66,44 @@ impl RomHeader {
         }
     }
 
-    fn from_rom(rom_bytes: &Vec<u8>) -> Self {
+    fn from_rom(rom_bytes: &Vec<u8>) -> Result<Self, CartridgeError> {
         let mut header = RomHeader::default();
         let mut reader = RomReader{start_offset: ROM_HEADER_START, rom_data: rom_bytes};
 
-        header.entry = reader.read_bytes(header.entry.len()).try_into().unwrap();
-        header.logo = reader.read_bytes(header.logo.len()).try_into().unwrap();
-        header.title = reader.read_bytes(header.title.len()).try_into().unwrap();
-        let lic_code = reader.read_bytes(2);
+        header.entry = reader.read_bytes(header.entry.len())?.try_into().unwrap();
+        header.logo = reader.read_bytes(header.logo.len())?.try_into().unwrap();
+        header.title = reader.read_bytes(header.title.len())?.try_into().unwrap();
+        let lic_code = reader.read_bytes(2)?;
         header.new_lic_code = u16::from_be_bytes(lic_code.try_into().unwrap());
-        header.sgb_flag = reader.read_bytes(1)[0];
-        header.cart_type = reader.read_bytes(1)[0];
-        header.rom_size = reader.read_bytes(1)[0];
-        header.ram_size = reader.read_bytes(1)[0];
-        header.dest_code = reader.read_bytes(1)[0];
-        header.lic_code = reader.read_bytes(1)[0];
-        header.version = reader.read_bytes(1)[0];
-        header.checksum = reader.read_bytes(1)[0];
-        let global_checksum = reader.read_bytes(2);
+        header.sgb_flag = reader.read_bytes(1)?[0];
+        header.cart_type = reader.read_bytes(1)?[0];
+        header.rom_size = reader.read_bytes(1)?[0];
+        header.ram_size = reader.read_bytes(1)?[0];
+        header.dest_code = reader.read_bytes(1)?[0];
+        header.lic_code = reader.read_bytes(1)?[0];
+        header.version = reader.read_bytes(1)?[0];
+        header.checksum = reader.read_bytes(1)?[0];
+        let global_checksum = reader.read_bytes(2)?;
         header.global_checksum = u16::from_be_bytes(global_checksum.try_into().unwrap());
 
-        header
+        Ok(header)
     }
 }
 
 pub struct Cartridge {
-    pub filename: String,
     pub rom_header: RomHeader,
     pub rom_data: Vec<u8>,
 }
 
 impl Cartridge {
-    pub fn new(filename: String, content: Vec<u8>) -> Self {
+    pub fn new(content: Vec<u8>) -> Result<Self, CartridgeError> {
         let rom_data = content;
-        let rom_header = RomHeader::from_rom(&rom_data);
+        let rom_header = RomHeader::from_rom(&rom_data)?;
 
-        Cartridge {
-            filename,
+        Ok(Cartridge {
             rom_header,
             rom_data,
-        }
+        })
     }
 
     pub fn validate_checksum(&self) -> bool {
@@ -116,6 +120,19 @@ impl Cartridge {
         let title = title.split(|&x| x == 0).collect::<Vec<_>>()[0];
         String::from_utf8(title.to_vec()).unwrap()
     }
+
+    pub fn read(&self, address: u16) -> Result<u8, CartridgeError> {
+        // Using only rom for now
+        if address as usize >= self.rom_data.len() {
+            return Err(CartridgeError::ReadFromInvalidAddress)
+        }
+
+        Ok(self.rom_data[address as usize])
+    }
+
+    pub fn write(&mut self, _address: u16, _data: u8) -> Result<(), CartridgeError> {
+        Ok(())
+    }
 }
 
 
@@ -129,7 +146,7 @@ mod tests {
     fn test_cartridge() {
         let filename = "./games/pokemon-y.gbc".to_string();
         let content = std::fs::read(&filename).unwrap();
-        let cartridge = Cartridge::new(filename, content);
+        let cartridge = Cartridge::new(content).unwrap();
         assert_eq!(cartridge.read_title(), "POKEMON YELLOW".to_string());
     }
 
@@ -137,7 +154,7 @@ mod tests {
     fn test_validate_checksum() {
         let filename = "./games/pokemon-y.gbc".to_string();
         let content = std::fs::read(&filename).unwrap();
-        let cartridge = Cartridge::new(filename, content);
+        let cartridge = Cartridge::new(content).unwrap();
         assert_eq!(cartridge.validate_checksum(), true);
     }
 }
