@@ -1,6 +1,6 @@
 
 
-const ROM_HEADER_START: usize = 0x100;
+pub const ROM_HEADER_START: usize = 0x100;
 const ROM_CHECKSUM_START: usize = 0x134;
 const ROM_CHECKSUM_END: usize = 0x14C;
 

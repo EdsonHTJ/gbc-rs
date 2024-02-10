@@ -76,6 +76,7 @@ impl EMU {
         self.cpu.fetch_instruction(&mut self.bus).unwrap();
         let cycles = self.cpu.fetch_data(&mut self.bus).unwrap();
         self.cycle(cycles);
+        println!("Executing instruction: {:x}", self.cpu.current_opcode);
         self.cpu.execute(&mut self.bus).unwrap();
     }
 

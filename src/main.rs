@@ -4,10 +4,11 @@ mod cartridge;
 mod bus;
 mod cpu;
 mod instructions;
+mod util;
 
 fn main() {
     let mut emu = emu::EMU::default();
-    let filename = "./games/pokemon-y.gbc".to_string();
+    let filename = "./games/dmg-acid2.gb".to_string();
     emu.load_game(filename);
     emu.run();
     println!("EMU is paused: {}", emu.paused);

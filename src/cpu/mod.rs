@@ -1,19 +1,11 @@
-use crate::bus::{BUS, BusError};
-use crate::emu::{EMU, FnCycle};
+mod error;
+mod processors;
+
+use crate::cpu::error::CpuError;
+use crate::bus::{BUS};
+use crate::cartridge::ROM_HEADER_START;
 use crate::instructions::{AddrMode, Instruction, RegType};
 
-#[derive(Debug)]
-pub enum CpuError {
-    BusError(BusError),
-    UnknownAddressMode,
-    InvalidInstruction
-}
-
-impl From<BusError> for CpuError {
-    fn from(error: BusError) -> Self {
-        CpuError::BusError(error)
-    }
-}
 
 pub struct CpuRegisters {
     pub a: u8,
@@ -51,7 +43,7 @@ impl CPU {
                 e: 0,
                 h: 0,
                 l: 0,
-                pc: 0,
+                pc: ROM_HEADER_START as u16,
                 sp: 0,
             },
             fetch_data: 0,
@@ -73,7 +65,7 @@ impl CPU {
         self.registers.e = 0;
         self.registers.h = 0;
         self.registers.l = 0;
-        self.registers.pc = 0;
+        self.registers.pc = ROM_HEADER_START as u16;
         self.registers.sp = 0;
         self.fetch_data = 0;
         self.mem_dest = 0;
@@ -84,8 +76,13 @@ impl CPU {
         self.current_instruction = Instruction::new();
     }
 
-    pub fn read_register(&self, reg_type: RegType) -> u16 {
-        return match reg_type {
+    pub fn read_register(&self, reg_type: Option<RegType>) -> Result<u16, CpuError> {
+        let reg_type = match reg_type {
+            None => { return Err(CpuError::InvalidRegister) }
+            Some(r) => {r}
+        };
+
+        let value = match reg_type {
             RegType::RtA => { self.registers.a as u16 }
             RegType::RtF => { self.registers.f as u16 }
             RegType::RtB => { self.registers.b as u16 }
@@ -100,7 +97,9 @@ impl CPU {
             RegType::RtHl => { (self.registers.h as u16) << 8 | self.registers.l as u16 }
             RegType::RtSp => { self.registers.sp }
             RegType::RtPc => { self.registers.pc }
-        }
+        };
+
+        Ok(value)
     }
 
     pub fn fetch_instruction(&mut self, bus: &mut BUS) -> Result<(), CpuError> {
@@ -113,41 +112,43 @@ impl CPU {
     pub fn fetch_data(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
         self.mem_dest = 0;
         self.dest_is_mem = false;
-        
-        match self.current_instruction.mode {
-            AddrMode::AmImp => {return Ok((0))}
+
+        return match self.current_instruction.mode {
+            AddrMode::AmImp => { Ok((0)) }
             AddrMode::AmR => {
-                //self.mem_dest = self.registers.a as u16;
+                self.fetch_data = self.read_register(self.current_instruction.reg_1)?;
+                Ok(0)
+            }
+            AddrMode::AmRR => {
+                self.fetch_data = self.read_register(self.current_instruction.reg_2)?;
+                Ok(0)
             }
             AddrMode::AmRD8 => {
-                self.mem_dest = bus.read(self.registers.pc)? as u16;
+                self.fetch_data = bus.read(self.registers.pc)? as u16;
 
                 //Update emulation cycles by 1
                 self.registers.pc += 1;
-                return Ok(1);
+                Ok(1)
             }
             AddrMode::AmD16 => {
-                self.mem_dest = bus.read(self.registers.pc)? as u16;
+                self.fetch_data = bus.read(self.registers.pc)? as u16;
                 //Update emulation cycles by 1
 
-                self.mem_dest |= (bus.read(self.registers.pc + 1)? as u16) << 8;
+                self.fetch_data |= (bus.read(self.registers.pc + 1)? as u16) << 8;
                 //Update emulation cycles by 1
 
                 self.registers.pc += 2;
 
-                return Ok(2);
+                Ok(2)
             }
             _ => {
-                return Err(CpuError::UnknownAddressMode);
+                Err(CpuError::UnknownAddressMode)
             }
         }
-
-        Ok((0))
     }
 
     pub fn execute(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
-        println!("Executing instruction: {:?}", self.current_instruction);
-        return Ok(0);
+        return self.process_instruction(bus);
     }
 
 }
