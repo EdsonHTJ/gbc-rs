@@ -76,11 +76,15 @@ impl EMU {
     }
 
     pub fn step_cpu(&mut self) -> () {
+        print!("Ticks: {:08X} ", self.ticks);
+        let old_pc = self.cpu.registers.pc.clone();
         self.cpu.fetch_instruction(&mut self.bus).unwrap();
         let cycles = self.cpu.fetch_data(&mut self.bus).unwrap();
         self.cycle(cycles);
-        Logger::log_cpu(&self.cpu);
-        Logger::log_instruction(&self.cpu.current_instruction);
+      //  Logger::log_cpu(&self.cpu);
+      //  Logger::log_instruction(&self.cpu.current_instruction);
+        print!("OLDPC: {:04X} ", old_pc);
+        Logger::log_cpu_state_with_instruction(&self.cpu);
         self.cpu.execute(&mut self.bus).unwrap();
     }
 

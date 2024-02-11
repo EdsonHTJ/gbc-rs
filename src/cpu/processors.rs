@@ -28,7 +28,7 @@ impl CPU {
     fn process_ld(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
         let mut cycles = 0;
         if self.dest_is_mem {
-            if self.current_instruction.reg_2 > Some(RegType::RtAf) {
+            if RegType::is_some_16_bit(self.current_instruction.reg_1){
                 cycles += 1;
                 bus.write_16(self.mem_dest, self.fetch_data)?;
             } else {
@@ -48,9 +48,10 @@ impl CPU {
                 FlagMode::from(hflag),
                 FlagMode::from(cflag),
             );
+
+            let val_to_write = self.read_register_r2()?.wrapping_add_signed(i16::from_be_bytes(self.fetch_data.to_be_bytes()));
             self.write_register_r1(
-                ((self.read_register_r2()? as i16)
-                    + i16::from_be_bytes(self.fetch_data.to_be_bytes())) as u16,
+                val_to_write
             )?;
 
             return Ok(cycles);
@@ -60,12 +61,8 @@ impl CPU {
         Ok(cycles)
     }
 
-    fn process_jp(&mut self) -> Result<u32, CpuError> {
-        if !self.check_condition() {
-            return Ok(0);
-        }
-        self.registers.pc = self.fetch_data;
-        Ok(1)
+    fn process_jp(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        self.goto_addr(self.fetch_data, false, bus)
     }
 
     fn process_di(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
@@ -96,6 +93,215 @@ impl CPU {
         Ok(1)
     }
 
+    fn process_pop(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        let data = self.stack_pop_16(bus)?;
+        self.write_register(self.current_instruction.reg_1, data)?;
+
+        if self.current_instruction.reg_1 == Some(RegType::RtAf) {
+            self.write_register(self.current_instruction.reg_1, data & 0xFFF0)?;
+        }
+        Ok(2)
+    }
+
+    fn process_push(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        let data = self.read_register_r1()?;
+        self.stack_push_16(bus, data)?;
+        Ok(2)
+    }
+
+    fn goto_addr(&mut self, addr: u16, push_pc: bool, bus: &mut BUS) -> Result<u32, CpuError> {
+        if !self.check_condition() {
+            return Ok(0);
+        }
+
+        let mut cycles = 0;
+        if push_pc {
+            self.stack_push_16(bus, self.registers.pc)?;
+            cycles += 2;
+        }
+
+        self.registers.pc = addr;
+        Ok(cycles + 1)
+    }
+
+    fn process_call(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        self.goto_addr(self.fetch_data, true, bus)
+    }
+
+    fn process_jr(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        let offset = i16::from_be_bytes(self.fetch_data.to_be_bytes());
+        let next_pc = self.registers.pc.wrapping_add_signed(offset);
+        self.goto_addr(next_pc, false, bus)
+    }
+
+    fn process_ret(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        let mut cycles = 0;
+        if self.current_instruction.cond != None {
+            cycles += 1;
+        }
+
+        if !self.check_condition() {
+            return Ok(cycles);
+        }
+
+        let addr = self.stack_pop_16(bus)?;
+        cycles += 2;
+        self.registers.pc = addr;
+        Ok(cycles)
+    }
+
+    fn process_reti(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        bus.write(0xFFFF, 0x01)?; // Enable all interrupts
+        self.process_ret(bus)
+    }
+
+    fn process_rst(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        self.goto_addr(self.current_instruction.param as u16, true, bus)
+    }
+
+    fn process_inc(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        let mut cycles = 0;
+        let mut value = self.read_register_r1()? + 1;
+        if RegType::is_some_16_bit(self.current_instruction.reg_1) {
+            cycles += 1;
+        }
+
+        if (self.current_instruction.reg_1 == Some(RegType::RtHl)) && (self.current_instruction.mode == AddrMode::AmMr) {
+            value = (bus.read(self.read_register_r1()?)? + 1) as u16;
+            value &= 0xFF;
+            bus.write(self.read_register_r1()?, value as u8)?;
+        }else {
+            self.write_register_r1(value)?;
+            value = self.read_register_r1()?;
+        }
+
+        if self.current_opcode & 0x03 == 0x03 {
+            return Ok(cycles);
+        }
+
+        self.cpu_set_flags(
+            FlagMode::from(value == 0),
+            FlagMode::Clear,
+            FlagMode::from((value & 0xF) == 0),
+            FlagMode::None,
+        );
+        Ok(cycles)
+    }
+
+    fn process_dec(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        let mut cycles = 0;
+        let mut value = self.read_register_r1()? - 1;
+        if RegType::is_some_16_bit(self.current_instruction.reg_1) {
+            cycles += 1;
+        }
+
+        if (self.current_instruction.reg_1 == Some(RegType::RtHl)) && (self.current_instruction.mode == AddrMode::AmMr) {
+            value = (bus.read(self.read_register_r1()?)? - 1) as u16;
+            value &= 0xFF;
+            bus.write(self.read_register_r1()?, value as u8)?;
+        }else {
+            self.write_register_r1(value)?;
+            value = self.read_register_r1()?;
+        }
+
+        if self.current_opcode & 0x0B == 0x0B {
+            return Ok(cycles);
+        }
+
+        self.cpu_set_flags(
+            FlagMode::from(value == 0),
+            FlagMode::Set,
+            FlagMode::from((value & 0xF) == 0x0F),
+            FlagMode::None,
+        );
+        Ok(cycles)
+    }
+
+    fn process_add(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        let mut cycles = 0;
+        let mut val = self.read_register_r1()?.wrapping_add(self.fetch_data);
+        let is_16_bit = RegType::is_some_16_bit(self.current_instruction.reg_1);
+
+        if is_16_bit {
+            cycles += 1;
+        }
+
+        if self.current_instruction.reg_1 == Some(RegType::RtSp) {
+            val = (self.read_register_r1()?.wrapping_add_signed(i16::from_be_bytes(self.fetch_data.to_be_bytes())));
+        }
+
+        let z = val & 0xff == 0;
+        let h = (self.read_register_r1()? & 0xf).wrapping_add(self.fetch_data & 0xf) > 0xf;
+        let c = ((self.read_register_r1()? & 0xFF).wrapping_add_signed(i16::from_be_bytes((self.fetch_data & 0xFF).to_be_bytes())) > 0xFF);
+
+        let mut z = FlagMode::from(z);
+        let mut h = FlagMode::from(h);
+        let mut c = FlagMode::from(c);
+
+        if is_16_bit {
+            z = FlagMode::None;
+            let val_h = (self.read_register_r1()? & 0xFFF + self.fetch_data & 0xFFF >= 0x1000);
+            h = FlagMode::from(val_h);
+
+            let n = self.read_register_r1()? as u32 + self.fetch_data as u32;
+            c = FlagMode::from(n >= 0x10000);
+        }
+
+        if self.current_instruction.reg_1 == Some(RegType::RtSp) {
+            z = FlagMode::Clear;
+            let val_h = (self.read_register_r1()? &0xF).wrapping_add(self.fetch_data & 0xF) >= 0x10;
+            h = FlagMode::from(val_h);
+            let val_c = (self.read_register_r1()? & 0xFF).wrapping_add_signed(i16::from_be_bytes((self.fetch_data & 0xFF).to_be_bytes())) >= 0x100;
+            c = FlagMode::from(val_c);
+        }
+
+        self.write_register(self.current_instruction.reg_1, val & 0xFFFF)?;
+        self.cpu_set_flags(z, FlagMode::Clear, h, c);
+        Ok(cycles)
+    }
+
+    fn process_adc(&mut self) -> Result<u32, CpuError> {
+        let u = self.fetch_data;
+        let a = self.registers.a as u16;
+        let c = self.get_c_flag() as u16;
+
+        let result = a + u + c;
+        let z = FlagMode::from(result == 0);
+        let h = FlagMode::from((a & 0xF) + (u & 0xF) + c > 0xF);
+        let c = FlagMode::from(result > 0xFF);
+
+        self.registers.a = result as u8;
+        self.cpu_set_flags(z, FlagMode::Clear, h, c);
+        Ok(0)
+    }
+
+    fn process_sub(&mut self) -> Result<u32, CpuError> {
+        let val = self.read_register_r1()?.wrapping_add_signed(-i16::from_be_bytes(self.fetch_data.to_be_bytes()));
+
+        let z = FlagMode::from(val == 0);
+        let h = FlagMode::from((self.read_register_r1()? & 0xF) < (self.fetch_data & 0xF));
+        let c = FlagMode::from(val > self.read_register_r1()?);
+
+        self.write_register_r1(val)?;
+        self.cpu_set_flags(z, FlagMode::Set, h, c);
+        Ok(0)
+    }
+
+    fn process_sbc(&mut self) -> Result<u32, CpuError> {
+        let u = self.fetch_data;
+        let a = self.registers.a as u16;
+        let c = self.get_c_flag() as u16;
+
+        let result = a - u - c;
+        let z = FlagMode::from(result == 0);
+        let h = FlagMode::from((a & 0xF) < (u & 0xF) + c);
+        let c = FlagMode::from(result > 0xFF);
+
+        self.registers.a = result as u8;
+        self.cpu_set_flags(z, FlagMode::Set, h, c);
+        Ok(0)
+    }
+
     pub(crate) fn process_instruction(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
         return match self.current_instruction.type_ {
             InType::InNop { .. } => Ok(0),
@@ -103,7 +309,7 @@ impl CPU {
                 return self.process_ld(bus);
             }
             InType::InJp => {
-                return self.process_jp();
+                return self.process_jp(bus);
             }
             InType::InDi => {
                 return self.process_di(bus);
@@ -116,6 +322,45 @@ impl CPU {
             }
             InType::InLdh => {
                 return self.process_ldh(bus);
+            }
+            InType::InPush => {
+                return self.process_push(bus);
+            }
+            InType::InPop => {
+                return self.process_pop(bus);
+            }
+            InType::InCall => {
+                return self.process_call(bus);
+            }
+            InType::InJr => {
+                return self.process_jr(bus);
+            }
+            InType::InRet => {
+                return self.process_ret(bus);
+            }
+            InType::InReti => {
+                return self.process_reti(bus);
+            }
+            InType::InRst => {
+                return self.process_rst(bus);
+            }
+            InType::InDec => {
+                return self.process_dec(bus);
+            }
+            InType::InInc => {
+                return self.process_inc(bus);
+            }
+            InType::InAdd => {
+                return self.process_add(bus);
+            }
+            InType::InAdc => {
+                return self.process_adc();
+            }
+            InType::InSub => {
+                return self.process_sub();
+            }
+            InType::InSbc => {
+                return self.process_sbc();
             }
             _ => Err(CpuError::InvalidInstruction(self.current_opcode as u32)),
         };

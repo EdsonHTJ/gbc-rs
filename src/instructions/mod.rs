@@ -45,6 +45,25 @@ pub enum RegType {
     RtPc,
 }
 
+impl RegType {
+    pub fn is_16_bit(&self) -> bool {
+        match self {
+            RegType::RtAf | RegType::RtBc | RegType::RtDe | RegType::RtHl | RegType::RtSp
+            | RegType::RtPc => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_some_16_bit(reg: Option<RegType>) -> bool {
+        let reg = match reg {
+            Some(r) => r,
+            None => return false,
+        };
+
+        return reg.is_16_bit();
+    }
+}
+
 // Instruction types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InType {

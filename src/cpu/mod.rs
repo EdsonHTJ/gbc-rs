@@ -2,6 +2,7 @@ mod error;
 mod fetch;
 mod flags;
 mod processors;
+mod stack;
 
 use crate::bus::BUS;
 use crate::cartridge::ROM_HEADER_START;
@@ -45,7 +46,7 @@ impl CPU {
                 h: 0,
                 l: 0,
                 pc: ROM_HEADER_START as u16,
-                sp: 0,
+                sp: 0xDFFF,
             },
             fetch_data: 0,
             mem_dest: 0,
