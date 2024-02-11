@@ -3,18 +3,24 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="ALL" />
   </component>
+  <component name="CargoProjectFeatures">
+    <cargoProject file="$PROJECT_DIR$/Cargo.toml">
+      <package file="$PROJECT_DIR$">
+        <feature name="default" />
+      </package>
+    </cargoProject>
+  </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/ram/mod.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/log/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bus/addresses.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/addresses.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bus/writers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/writers.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/processors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/processors.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -60,6 +66,7 @@
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -114,7 +121,7 @@
       <workItem from="1707609153252" duration="42000" />
       <workItem from="1707609321820" duration="2413000" />
       <workItem from="1707614791165" duration="7894000" />
-      <workItem from="1707659790099" duration="6538000" />
+      <workItem from="1707659790099" duration="8009000" />
     </task>
     <servers />
   </component>
@@ -126,12 +133,12 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/cpu/processors.rs</url>
-          <line>61</line>
+          <line>66</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/emu/mod.rs</url>
-          <line>81</line>
+          <line>83</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
       </breakpoints>

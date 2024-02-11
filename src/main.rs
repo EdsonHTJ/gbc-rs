@@ -6,6 +6,7 @@ mod gfx;
 mod instructions;
 mod util;
 mod ram;
+mod log;
 
 fn main() {
     let mut emu = emu::EMU::default();

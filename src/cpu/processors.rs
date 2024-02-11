@@ -34,6 +34,8 @@ impl CPU {
             } else {
                 bus.write(self.mem_dest, self.fetch_data as u8)?;
             }
+
+            return Ok(cycles);
         }
 
         if self.current_instruction.mode == AddrMode::AmHlSpr {
@@ -50,8 +52,11 @@ impl CPU {
                 ((self.read_register_r2()? as i16)
                     + i16::from_be_bytes(self.fetch_data.to_be_bytes())) as u16,
             )?;
+
+            return Ok(cycles);
         }
 
+        self.write_register(self.current_instruction.reg_1, self.fetch_data)?;
         Ok(cycles)
     }
 

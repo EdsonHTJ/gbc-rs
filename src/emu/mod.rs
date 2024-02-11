@@ -4,6 +4,7 @@ use crate::cpu::CPU;
 use crate::gfx::color::Color;
 use crate::gfx::Gfx;
 use std::time::Duration;
+use crate::log::{Logger, LoggerTrait};
 
 pub struct EMU {
     pub paused: bool,
@@ -78,7 +79,8 @@ impl EMU {
         self.cpu.fetch_instruction(&mut self.bus).unwrap();
         let cycles = self.cpu.fetch_data(&mut self.bus).unwrap();
         self.cycle(cycles);
-        println!("Executing instruction: {:x}", self.cpu.current_opcode);
+        Logger::log_cpu(&self.cpu);
+        Logger::log_instruction(&self.cpu.current_instruction);
         self.cpu.execute(&mut self.bus).unwrap();
     }
 
