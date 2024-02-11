@@ -1,20 +1,8 @@
-use crate::cartridge::{Cartridge, CartridgeError};
+mod addresses;
+mod writers;
 
-/*
-    0x0000 - 0x3FFF: 16KB ROM Bank 00 (in cartridge, fixed at bank 00)
-    0x4000 - 0x7FFF: 16KB ROM Bank 01..NN (in cartridge, switchable bank number)
-    0x8000 - 0x97FF: CHM RAM
-    0x9800 - 0x9BFF: BG Map Data 1
-    0x9C00 - 0x9FFF: BG Map Data 2
-    0xA000 - 0xBFFF: Cartridge RAM
-    0xC000 - 0xCFFF: Internal RAM: BANK 0
-    0xD000 - 0xDFFF: Internal RAM: BANK 1-7
-    0xE000 - 0xFDFF: Echo RAM - Reserved, Do Not Use
-    0xFE00 - 0xFE9F: OAM - Object Attribute Memory
-    0xFEA0 - 0xFEFF: Unusable Memory
-    0xFF00 - 0xFF7F: I/O Ports
-    0xFF80 - 0xFFFE: Zero Page
-*/
+use crate::bus::addresses::AddrSpace;
+use crate::cartridge::{Cartridge, CartridgeError};
 
 #[derive(Debug)]
 pub enum BusError {
@@ -39,19 +27,15 @@ impl BUS {
     }
 
     pub fn read(&mut self, address: u16) -> Result<u8, BusError> {
-        if address < 0x8000 {
-            return self.read_from_cartridge(address);
-        }
-
-        Err(BusError::NotImplemented)
+        let region = AddrSpace::from_address(&address)?;
+        let reader = writers::get_writer_by_region(region)?;
+        reader.read(self, address)
     }
 
     pub fn write(&mut self, address: u16, data: u8) -> Result<(), BusError> {
-        if address < 0x8000 {
-            return self.write_to_cartridge(address, data);
-        }
-
-        Err(BusError::NotImplemented)
+        let region = AddrSpace::from_address(&address)?;
+        let writer = writers::get_writer_by_region(region)?;
+        writer.write(self, address, data)
     }
 
     pub fn write_16(&mut self, address: u16, data: u16) -> Result<(), BusError> {

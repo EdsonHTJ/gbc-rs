@@ -723,7 +723,6 @@ macro_rules! create_instructions {
             cond: None,
             param: 0,
         });
-
         instructions[0x48] = Some(Instruction {
             type_: InType::InLd,
             mode: AddrMode::AmRR,
