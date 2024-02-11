@@ -54,6 +54,18 @@ impl BUS {
         Err(BusError::NotImplemented)
     }
 
+    pub fn write_16(&mut self, address: u16, data: u16) -> Result<(), BusError> {
+        self.write(address, (data & 0xFF) as u8)?;
+        self.write(address + 1, (data >> 8) as u8)?;
+        Ok(())
+    }
+
+    pub fn read_16(&mut self, address: u16) -> Result<u16, BusError> {
+        let low = self.read(address)? as u16;
+        let high = self.read(address + 1)? as u16;
+        Ok((high << 8) | low)
+    }
+
     fn read_from_cartridge(&mut self, address: u16) -> Result<u8, BusError> {
         if self.cartridge.is_none() {
             return Err(BusError::NoCartridgeLoaded);

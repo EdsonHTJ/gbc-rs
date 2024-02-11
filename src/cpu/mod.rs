@@ -1,4 +1,5 @@
 mod error;
+mod fetch;
 mod flags;
 mod processors;
 
@@ -88,48 +89,62 @@ impl CPU {
         Ok(value)
     }
 
-    pub fn fetch_instruction(&mut self, bus: &mut BUS) -> Result<(), CpuError> {
-        self.current_opcode = bus.read(self.registers.pc)?;
-        self.registers.pc += 1;
-        self.current_instruction = Instruction::by_opcode(self.current_opcode)
-            .ok_or(CpuError::InvalidInstruction(self.current_opcode as u32))?;
+    pub fn write_register(
+        &mut self,
+        reg_type: Option<RegType>,
+        value: u16,
+    ) -> Result<(), CpuError> {
+        let reg_type = match reg_type {
+            None => return Err(CpuError::InvalidRegister),
+            Some(r) => r,
+        };
+
+        match reg_type {
+            RegType::RtA => self.registers.a = value as u8,
+            RegType::RtF => self.registers.f = value as u8,
+            RegType::RtB => self.registers.b = value as u8,
+            RegType::RtC => self.registers.c = value as u8,
+            RegType::RtD => self.registers.d = value as u8,
+            RegType::RtE => self.registers.e = value as u8,
+            RegType::RtH => self.registers.h = value as u8,
+            RegType::RtL => self.registers.l = value as u8,
+            RegType::RtAf => {
+                self.registers.a = (value >> 8) as u8;
+                self.registers.f = value as u8;
+            }
+            RegType::RtBc => {
+                self.registers.b = (value >> 8) as u8;
+                self.registers.c = value as u8;
+            }
+            RegType::RtDe => {
+                self.registers.d = (value >> 8) as u8;
+                self.registers.e = value as u8;
+            }
+            RegType::RtHl => {
+                self.registers.h = (value >> 8) as u8;
+                self.registers.l = value as u8;
+            }
+            RegType::RtSp => self.registers.sp = value,
+            RegType::RtPc => self.registers.pc = value,
+        };
+
         Ok(())
     }
 
-    pub fn fetch_data(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
-        self.mem_dest = 0;
-        self.dest_is_mem = false;
+    pub fn read_register_r1(&self) -> Result<u16, CpuError> {
+        self.read_register(self.current_instruction.reg_1)
+    }
 
-        return match self.current_instruction.mode {
-            AddrMode::AmImp => Ok((0)),
-            AddrMode::AmR => {
-                self.fetch_data = self.read_register(self.current_instruction.reg_1)?;
-                Ok(0)
-            }
-            AddrMode::AmRR => {
-                self.fetch_data = self.read_register(self.current_instruction.reg_2)?;
-                Ok(0)
-            }
-            AddrMode::AmRD8 => {
-                self.fetch_data = bus.read(self.registers.pc)? as u16;
+    pub fn write_register_r1(&mut self, value: u16) -> Result<(), CpuError> {
+        self.write_register(self.current_instruction.reg_1, value)
+    }
 
-                //Update emulation cycles by 1
-                self.registers.pc += 1;
-                Ok(1)
-            }
-            AddrMode::AmD16 => {
-                self.fetch_data = bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+    pub fn read_register_r2(&self) -> Result<u16, CpuError> {
+        self.read_register(self.current_instruction.reg_2)
+    }
 
-                self.fetch_data |= (bus.read(self.registers.pc + 1)? as u16) << 8;
-                //Update emulation cycles by 1
-
-                self.registers.pc += 2;
-
-                Ok(2)
-            }
-            _ => Err(CpuError::UnknownAddressMode),
-        };
+    pub fn write_register_r2(&mut self, value: u16) -> Result<(), CpuError> {
+        self.write_register(self.current_instruction.reg_2, value)
     }
 
     pub fn execute(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {

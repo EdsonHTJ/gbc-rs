@@ -8,22 +8,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/cpu/flags.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gba-rs.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cpu/fetch.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cartridge/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cartridge/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/error.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/processors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/processors.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gfx/color.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/gfx/color.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gfx/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/gfx/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gfx/sdl.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/gfx/sdl.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/instructions/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/instructions/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/util/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/util/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,26 +41,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Cargo.Run gbc-rs.executor": "Run",
-    "Cargo.Run.executor": "Run",
-    "Cargo.Test cartridge::tests::test_cartridge.executor": "Run",
-    "Cargo.Test cartridge::tests::test_validate_checksum.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.rust.reset.selective.auto.import": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "/home/edson/gits/gbc-rs/games",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Cargo.Run gbc-rs.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Run.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test cartridge::tests::test_cartridge.executor&quot;: &quot;Run&quot;,
+    &quot;Cargo.Test cartridge::tests::test_validate_checksum.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/edson/gits/gbc-rs/games&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/games" />
@@ -120,7 +110,8 @@
       <workItem from="1707440134520" duration="5968000" />
       <workItem from="1707505668122" duration="9287000" />
       <workItem from="1707609153252" duration="42000" />
-      <workItem from="1707609321820" duration="1187000" />
+      <workItem from="1707609321820" duration="2413000" />
+      <workItem from="1707614791165" duration="7894000" />
     </task>
     <servers />
   </component>
@@ -142,7 +133,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/cpu/processors.rs</url>
-          <line>35</line>
+          <line>61</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>

@@ -2,7 +2,7 @@ use crate::bus::BUS;
 use crate::cpu::error::CpuError;
 use crate::cpu::flags::FlagMode;
 use crate::cpu::CPU;
-use crate::instructions::{CondType, InType};
+use crate::instructions::{AddrMode, CondType, InType, RegType};
 use crate::util;
 
 impl CPU {
@@ -25,8 +25,34 @@ impl CPU {
         };
     }
 
-    fn process_ld(&self) -> Result<u32, CpuError> {
-        todo!()
+    fn process_ld(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        let mut cycles = 0;
+        if self.dest_is_mem {
+            if self.current_instruction.reg_2 > Some(RegType::RtAf) {
+                cycles += 1;
+                bus.write_16(self.mem_dest, self.fetch_data)?;
+            } else {
+                bus.write(self.mem_dest, self.fetch_data as u8)?;
+            }
+        }
+
+        if self.current_instruction.mode == AddrMode::AmHlSpr {
+            let hflag = (self.read_register_r2()? & 0xF) + (self.fetch_data & 0xF) >= 0x10;
+            let cflag = (self.read_register_r2()? & 0xFF) + (self.fetch_data & 0xFF) >= 0x100;
+
+            self.cpu_set_flags(
+                FlagMode::Clear,
+                FlagMode::Clear,
+                FlagMode::from(hflag),
+                FlagMode::from(cflag),
+            );
+            self.write_register_r1(
+                ((self.read_register_r2()? as i16)
+                    + i16::from_be_bytes(self.fetch_data.to_be_bytes())) as u16,
+            )?;
+        }
+
+        Ok(cycles)
     }
 
     fn process_jp(&mut self) -> Result<u32, CpuError> {
@@ -55,11 +81,11 @@ impl CPU {
         Ok(0)
     }
 
-    pub(crate) fn process_instruction(&mut self, _bus: &mut BUS) -> Result<u32, CpuError> {
+    pub(crate) fn process_instruction(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
         return match self.current_instruction.type_ {
             InType::InNop { .. } => Ok(0),
             InType::InLd => {
-                return self.process_ld();
+                return self.process_ld(bus);
             }
             InType::InJp => {
                 return self.process_jp();
