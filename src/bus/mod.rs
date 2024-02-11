@@ -3,21 +3,32 @@ mod writers;
 
 use crate::bus::addresses::AddrSpace;
 use crate::cartridge::{Cartridge, CartridgeError};
+use crate::ram::{Ram, RamError};
 
 #[derive(Debug)]
 pub enum BusError {
     NotImplemented,
     NoCartridgeLoaded,
     CartridgeError(CartridgeError),
+    InvalidAddress,
+    RamError(RamError),
+}
+
+impl From<RamError> for BusError {
+    fn from(e: RamError) -> BusError {
+        BusError::RamError(e)
+    }
 }
 
 pub struct BUS {
-    pub cartridge: Option<Cartridge>,
+    cartridge: Option<Cartridge>,
+    ram: Ram,
+    interrupt_register: u8,
 }
 
 impl BUS {
     pub fn new() -> BUS {
-        BUS { cartridge: None }
+        BUS { cartridge: None, ram: Ram::new(), interrupt_register: 0 }
     }
 
     pub fn load_game(&mut self, rom: Vec<u8>) -> Result<(), CartridgeError> {
@@ -72,5 +83,35 @@ impl BUS {
         cartridge
             .write(address, data)
             .map_err(|e| BusError::CartridgeError(e))
+    }
+
+    fn read_from_ram(&self, address: u16) -> Result<u8, BusError> {
+        let region = AddrSpace::from_address(&address)?;
+        let address = AddrSpace::get_ram_offset(address)?;
+        match region {
+            AddrSpace::RAM0 | AddrSpace::RAM1 => Ok(self.ram.read_wram(address)?),
+            AddrSpace::ZP => Ok(self.ram.read_hram(address)?),
+            _ => Err(BusError::InvalidAddress),
+        }
+    }
+
+    fn write_to_ram(&mut self, address: u16, data: u8) -> Result<(), BusError> {
+        let region = AddrSpace::from_address(&address)?;
+        let address = AddrSpace::get_ram_offset(address)?;
+        match region {
+            AddrSpace::RAM0 | AddrSpace::RAM1 => self.ram.write_wram(address, data)?,
+            AddrSpace::ZP => self.ram.write_hram(address, data)?,
+            _ => return Err(BusError::InvalidAddress),
+        }
+
+        Ok(())
+    }
+
+    fn read_from_master_interruption_register(&self) -> u8 {
+        self.interrupt_register
+    }
+
+    fn write_to_master_interruption_register(&mut self, data: u8) {
+        self.interrupt_register = data;
     }
 }

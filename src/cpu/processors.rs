@@ -63,13 +63,13 @@ impl CPU {
         Ok(1)
     }
 
-    fn process_di(&mut self) -> Result<u32, CpuError> {
-        self.interrupt_master_enable = false;
+    fn process_di(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        bus.write(0xFFFF, 0x00)?; // Disable all interrupts
         Ok(0)
     }
 
-    fn process_ei(&mut self) -> Result<u32, CpuError> {
-        self.interrupt_master_enable = true;
+    fn process_ei(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        bus.write(0xFFFF, 0x01)?; // Disable all interrupts
         Ok(0)
     }
 
@@ -79,6 +79,16 @@ impl CPU {
         let z = FlagMode::from(self.registers.a == 0);
         self.cpu_set_flags(z, FlagMode::Clear, FlagMode::Clear, FlagMode::Clear);
         Ok(0)
+    }
+
+    fn process_ldh(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        if self.current_instruction.reg_1 == Some(RegType::RtA) {
+            self.write_register(self.current_instruction.reg_1, bus.read(0xFF00 | self.fetch_data)? as u16)?;
+        }else {
+            bus.write(0xFF00 | self.fetch_data, self.registers.a)?;
+        }
+
+        Ok(1)
     }
 
     pub(crate) fn process_instruction(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
@@ -91,13 +101,16 @@ impl CPU {
                 return self.process_jp();
             }
             InType::InDi => {
-                return self.process_di();
+                return self.process_di(bus);
             }
             InType::InEi => {
-                return self.process_ei();
+                return self.process_ei(bus);
             }
             InType::InXor => {
                 return self.process_xor();
+            }
+            InType::InLdh => {
+                return self.process_ldh(bus);
             }
             _ => Err(CpuError::InvalidInstruction(self.current_opcode as u32)),
         };

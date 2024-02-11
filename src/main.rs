@@ -5,6 +5,7 @@ mod emu;
 mod gfx;
 mod instructions;
 mod util;
+mod ram;
 
 fn main() {
     let mut emu = emu::EMU::default();

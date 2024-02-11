@@ -12,6 +12,7 @@
     0xFEA0 - 0xFEFF: Unusable Memory
     0xFF00 - 0xFF7F: I/O Ports
     0xFF80 - 0xFFFE: Zero Page
+    0xFFFF: Interrupt Enable Register
 */
 
 use crate::bus::BusError;
@@ -30,6 +31,7 @@ pub enum AddrSpace {
     UNUSABLE,
     IO,
     ZP,
+    INTERRUPT
 }
 
 impl AddrSpace {
@@ -48,6 +50,7 @@ impl AddrSpace {
             AddrSpace::UNUSABLE => (0xFEA0, 0xFEFF),
             AddrSpace::IO => (0xFF00, 0xFF7F),
             AddrSpace::ZP => (0xFF80, 0xFFFE),
+            AddrSpace::INTERRUPT => (0xFFFF, 0xFFFF),
         }
     }
 
@@ -66,9 +69,21 @@ impl AddrSpace {
             0xFEA0..=0xFEFF => AddrSpace::UNUSABLE,
             0xFF00..=0xFF7F => AddrSpace::IO,
             0xFF80..=0xFFFE => AddrSpace::ZP,
+            0xFFFF => AddrSpace::INTERRUPT,
             _ => return Err(BusError::NotImplemented),
         };
 
         Ok(region)
+    }
+
+    pub fn get_ram_offset(address: u16) -> Result<u16, BusError> {
+        let region = AddrSpace::from_address(&address)?;
+        match region {
+            AddrSpace::RAM1 | AddrSpace::RAM0 | AddrSpace::ZP => {
+                let (start, end) = region.get_region();
+                Ok(address - start)
+            },
+            _ => Err(BusError::InvalidAddress),
+        }
     }
 }

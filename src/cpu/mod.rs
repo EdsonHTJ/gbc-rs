@@ -30,7 +30,6 @@ pub struct CPU {
     pub stepping: bool,
     pub dest_is_mem: bool,
     pub current_instruction: Instruction,
-    pub interrupt_master_enable: bool,
 }
 
 impl CPU {
@@ -55,7 +54,6 @@ impl CPU {
             stepping: false,
             dest_is_mem: false,
             current_instruction: Instruction::new(),
-            interrupt_master_enable: false,
         }
     }
 
