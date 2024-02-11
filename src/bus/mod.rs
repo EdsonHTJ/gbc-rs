@@ -1,6 +1,5 @@
 use crate::cartridge::{Cartridge, CartridgeError};
 
-
 /*
     0x0000 - 0x3FFF: 16KB ROM Bank 00 (in cartridge, fixed at bank 00)
     0x4000 - 0x7FFF: 16KB ROM Bank 01..NN (in cartridge, switchable bank number)
@@ -30,9 +29,7 @@ pub struct BUS {
 
 impl BUS {
     pub fn new() -> BUS {
-        BUS {
-            cartridge: None,
-        }
+        BUS { cartridge: None }
     }
 
     pub fn load_game(&mut self, rom: Vec<u8>) -> Result<(), CartridgeError> {
@@ -64,7 +61,9 @@ impl BUS {
 
         let cartridge = self.cartridge.as_mut().unwrap();
 
-        cartridge.read(address).map_err(|e| BusError::CartridgeError(e))
+        cartridge
+            .read(address)
+            .map_err(|e| BusError::CartridgeError(e))
     }
 
     fn write_to_cartridge(&mut self, address: u16, data: u8) -> Result<(), BusError> {
@@ -74,7 +73,8 @@ impl BUS {
 
         let cartridge = self.cartridge.as_mut().unwrap();
 
-        cartridge.write(address, data).map_err(|e| BusError::CartridgeError(e))
+        cartridge
+            .write(address, data)
+            .map_err(|e| BusError::CartridgeError(e))
     }
-
 }

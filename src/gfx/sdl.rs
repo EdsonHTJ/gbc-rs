@@ -1,5 +1,5 @@
-use crate::gfx::{Gfx, GfxError, UserEvents};
 use crate::gfx::color::Color;
+use crate::gfx::{Gfx, GfxError, UserEvents};
 
 pub struct SDL {
     pub canvas: sdl2::render::Canvas<sdl2::video::Window>,
@@ -18,7 +18,8 @@ impl SDL {
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
 
-        let window_result = video_subsystem.window("gba-rs", 800, 600)
+        let window_result = video_subsystem
+            .window("gba-rs", 800, 600)
             .position_centered()
             .build();
 
@@ -37,10 +38,7 @@ impl SDL {
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
 
-        Ok(SDL {
-            canvas,
-            event_pump,
-        })
+        Ok(SDL { canvas, event_pump })
     }
 }
 impl Gfx for SDL {
@@ -57,21 +55,30 @@ impl Gfx for SDL {
         self.canvas.clear();
     }
 
-    fn draw_pixel(&mut self, x: i32, y: i32, color: crate::gfx::color::Color) -> Result<(), crate::gfx::GfxError> {
+    fn draw_pixel(
+        &mut self,
+        x: i32,
+        y: i32,
+        color: crate::gfx::color::Color,
+    ) -> Result<(), crate::gfx::GfxError> {
         self.canvas.set_draw_color(color);
         return match self.canvas.draw_point(sdl2::rect::Point::new(x, y)) {
             Ok(_) => Ok(()),
             Err(e) => Err(crate::gfx::GfxError::DrawError(e.to_string())),
-        }
+        };
     }
 
     fn get_user_events(&mut self) -> Vec<UserEvents> {
-        self.event_pump.poll_iter().map(|event| {
-            match event {
-                sdl2::event::Event::Quit {..} => UserEvents::Quit,
-                sdl2::event::Event::KeyDown { keycode: Some(keycode), .. } => UserEvents::KeyPressed(keycode.name().to_string()),
+        self.event_pump
+            .poll_iter()
+            .map(|event| match event {
+                sdl2::event::Event::Quit { .. } => UserEvents::Quit,
+                sdl2::event::Event::KeyDown {
+                    keycode: Some(keycode),
+                    ..
+                } => UserEvents::KeyPressed(keycode.name().to_string()),
                 _ => UserEvents::Unknown,
-            }
-        }).collect()
+            })
+            .collect()
     }
 }

@@ -1,20 +1,19 @@
 use crate::gfx::color::Color;
 
-pub(crate) mod sdl;
 pub(crate) mod color;
-
+pub(crate) mod sdl;
 
 #[derive(Debug)]
 pub enum UserEvents {
     Unknown,
     Quit,
-    KeyPressed(String)
+    KeyPressed(String),
 }
 
 #[derive(Debug)]
 pub enum GfxError {
     InitError(String),
-    DrawError(String)
+    DrawError(String),
 }
 
 pub trait Gfx {

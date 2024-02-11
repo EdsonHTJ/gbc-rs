@@ -8,11 +8,7 @@ pub struct Color {
 
 impl Color {
     pub fn new(r: u8, g: u8, b: u8) -> Color {
-        Color {
-            r,
-            g,
-            b,
-        }
+        Color { r, g, b }
     }
 
     #[allow(dead_code)]

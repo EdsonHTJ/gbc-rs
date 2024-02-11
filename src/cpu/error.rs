@@ -4,8 +4,8 @@ use crate::bus::BusError;
 pub enum CpuError {
     BusError(BusError),
     UnknownAddressMode,
-    InvalidInstruction,
-    InvalidRegister
+    InvalidInstruction(u32),
+    InvalidRegister,
 }
 
 impl From<BusError> for CpuError {

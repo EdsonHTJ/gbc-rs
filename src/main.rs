@@ -1,8 +1,8 @@
+mod bus;
+mod cartridge;
+mod cpu;
 mod emu;
 mod gfx;
-mod cartridge;
-mod bus;
-mod cpu;
 mod instructions;
 mod util;
 

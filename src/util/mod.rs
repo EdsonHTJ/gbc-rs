@@ -1,8 +1,3 @@
-
-
-
-
-
 pub fn modify_bit(val: u8, bit: u8, set: bool) -> u8 {
     if set {
         val | (1 << bit)

@@ -1,5 +1,3 @@
-
-
 pub const ROM_HEADER_START: usize = 0x100;
 const ROM_CHECKSUM_START: usize = 0x134;
 const ROM_CHECKSUM_END: usize = 0x14C;
@@ -18,7 +16,7 @@ pub struct RomReader<'a> {
 impl RomReader<'_> {
     pub fn read_bytes(&mut self, size: usize) -> Result<Vec<u8>, CartridgeError> {
         if self.start_offset + size > self.rom_data.len() {
-            return Err(CartridgeError::InvalidRomData)
+            return Err(CartridgeError::InvalidRomData);
         }
 
         let slice = &self.rom_data[self.start_offset..self.start_offset + size];
@@ -27,7 +25,6 @@ impl RomReader<'_> {
         Ok(slice.to_vec())
     }
 }
-
 
 #[repr(C)]
 pub struct RomHeader {
@@ -47,7 +44,6 @@ pub struct RomHeader {
 }
 
 impl RomHeader {
-    
     fn default() -> Self {
         RomHeader {
             entry: [0x00; 4],
@@ -68,7 +64,10 @@ impl RomHeader {
 
     fn from_rom(rom_bytes: &Vec<u8>) -> Result<Self, CartridgeError> {
         let mut header = RomHeader::default();
-        let mut reader = RomReader{start_offset: ROM_HEADER_START, rom_data: rom_bytes};
+        let mut reader = RomReader {
+            start_offset: ROM_HEADER_START,
+            rom_data: rom_bytes,
+        };
 
         header.entry = reader.read_bytes(header.entry.len())?.try_into().unwrap();
         header.logo = reader.read_bytes(header.logo.len())?.try_into().unwrap();
@@ -124,7 +123,7 @@ impl Cartridge {
     pub fn read(&self, address: u16) -> Result<u8, CartridgeError> {
         // Using only rom for now
         if address as usize >= self.rom_data.len() {
-            return Err(CartridgeError::ReadFromInvalidAddress)
+            return Err(CartridgeError::ReadFromInvalidAddress);
         }
 
         Ok(self.rom_data[address as usize])
@@ -134,9 +133,6 @@ impl Cartridge {
         Ok(())
     }
 }
-
-
-
 
 #[cfg(test)]
 mod tests {

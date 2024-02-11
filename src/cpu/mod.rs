@@ -1,11 +1,11 @@
 mod error;
+mod flags;
 mod processors;
 
-use crate::cpu::error::CpuError;
-use crate::bus::{BUS};
+use crate::bus::BUS;
 use crate::cartridge::ROM_HEADER_START;
+use crate::cpu::error::CpuError;
 use crate::instructions::{AddrMode, Instruction, RegType};
-
 
 pub struct CpuRegisters {
     pub a: u8,
@@ -29,13 +29,14 @@ pub struct CPU {
     pub stepping: bool,
     pub dest_is_mem: bool,
     pub current_instruction: Instruction,
+    pub interrupt_master_enable: bool,
 }
 
 impl CPU {
     pub fn new() -> CPU {
         CPU {
             registers: CpuRegisters {
-                a: 0,
+                a: 0x01,
                 f: 0,
                 b: 0,
                 c: 0,
@@ -53,50 +54,35 @@ impl CPU {
             stepping: false,
             dest_is_mem: false,
             current_instruction: Instruction::new(),
+            interrupt_master_enable: false,
         }
     }
 
     pub fn reset(&mut self) {
-        self.registers.a = 0;
-        self.registers.f = 0;
-        self.registers.b = 0;
-        self.registers.c = 0;
-        self.registers.d = 0;
-        self.registers.e = 0;
-        self.registers.h = 0;
-        self.registers.l = 0;
-        self.registers.pc = ROM_HEADER_START as u16;
-        self.registers.sp = 0;
-        self.fetch_data = 0;
-        self.mem_dest = 0;
-        self.current_opcode = 0;
-        self.halted = false;
-        self.stepping = false;
-        self.dest_is_mem = false;
-        self.current_instruction = Instruction::new();
+        *self = CPU::new();
     }
 
     pub fn read_register(&self, reg_type: Option<RegType>) -> Result<u16, CpuError> {
         let reg_type = match reg_type {
-            None => { return Err(CpuError::InvalidRegister) }
-            Some(r) => {r}
+            None => return Err(CpuError::InvalidRegister),
+            Some(r) => r,
         };
 
         let value = match reg_type {
-            RegType::RtA => { self.registers.a as u16 }
-            RegType::RtF => { self.registers.f as u16 }
-            RegType::RtB => { self.registers.b as u16 }
-            RegType::RtC => { self.registers.c as u16 }
-            RegType::RtD => { self.registers.d as u16 }
-            RegType::RtE => { self.registers.e as u16 }
-            RegType::RtH => { self.registers.h as u16 }
-            RegType::RtL => { self.registers.l as u16 }
-            RegType::RtAf => { (self.registers.a as u16) << 8 | self.registers.f as u16 }
-            RegType::RtBc => { (self.registers.b as u16) << 8 | self.registers.c as u16 }
-            RegType::RtDe => { (self.registers.d as u16) << 8 | self.registers.e as u16 }
-            RegType::RtHl => { (self.registers.h as u16) << 8 | self.registers.l as u16 }
-            RegType::RtSp => { self.registers.sp }
-            RegType::RtPc => { self.registers.pc }
+            RegType::RtA => self.registers.a as u16,
+            RegType::RtF => self.registers.f as u16,
+            RegType::RtB => self.registers.b as u16,
+            RegType::RtC => self.registers.c as u16,
+            RegType::RtD => self.registers.d as u16,
+            RegType::RtE => self.registers.e as u16,
+            RegType::RtH => self.registers.h as u16,
+            RegType::RtL => self.registers.l as u16,
+            RegType::RtAf => (self.registers.a as u16) << 8 | self.registers.f as u16,
+            RegType::RtBc => (self.registers.b as u16) << 8 | self.registers.c as u16,
+            RegType::RtDe => (self.registers.d as u16) << 8 | self.registers.e as u16,
+            RegType::RtHl => (self.registers.h as u16) << 8 | self.registers.l as u16,
+            RegType::RtSp => self.registers.sp,
+            RegType::RtPc => self.registers.pc,
         };
 
         Ok(value)
@@ -105,7 +91,8 @@ impl CPU {
     pub fn fetch_instruction(&mut self, bus: &mut BUS) -> Result<(), CpuError> {
         self.current_opcode = bus.read(self.registers.pc)?;
         self.registers.pc += 1;
-        self.current_instruction = Instruction::by_opcode(self.current_opcode).ok_or(CpuError::InvalidInstruction)?;
+        self.current_instruction = Instruction::by_opcode(self.current_opcode)
+            .ok_or(CpuError::InvalidInstruction(self.current_opcode as u32))?;
         Ok(())
     }
 
@@ -114,7 +101,7 @@ impl CPU {
         self.dest_is_mem = false;
 
         return match self.current_instruction.mode {
-            AddrMode::AmImp => { Ok((0)) }
+            AddrMode::AmImp => Ok((0)),
             AddrMode::AmR => {
                 self.fetch_data = self.read_register(self.current_instruction.reg_1)?;
                 Ok(0)
@@ -141,14 +128,11 @@ impl CPU {
 
                 Ok(2)
             }
-            _ => {
-                Err(CpuError::UnknownAddressMode)
-            }
-        }
+            _ => Err(CpuError::UnknownAddressMode),
+        };
     }
 
     pub fn execute(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
         return self.process_instruction(bus);
     }
-
 }

@@ -1,9 +1,9 @@
-use std::time::Duration;
 use crate::bus::BUS;
 use crate::cartridge::Cartridge;
 use crate::cpu::CPU;
-use crate::gfx::Gfx;
 use crate::gfx::color::Color;
+use crate::gfx::Gfx;
+use std::time::Duration;
 
 pub struct EMU {
     pub paused: bool,
@@ -45,7 +45,9 @@ impl EMU {
         let mut i = self.ticks;
         i = (i + 1) % 255;
         //canvas.clear();
-        self.gfx.draw_pixel(i as i32, i as i32, Color::new(255, 0, 0)).unwrap();
+        self.gfx
+            .draw_pixel(i as i32, i as i32, Color::new(255, 0, 0))
+            .unwrap();
         let event_pump = self.gfx.get_user_events();
         for event in &event_pump {
             match event {

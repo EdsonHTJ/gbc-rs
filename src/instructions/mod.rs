@@ -143,14 +143,57 @@ const INSTRUCTION_SET_SIZE: usize = 0x100;
 
 macro_rules! create_instructions {
     () => {{
-        let mut instructions: [Option<Instruction>; INSTRUCTION_SET_SIZE] = [None; INSTRUCTION_SET_SIZE];
+        let mut instructions: [Option<Instruction>; INSTRUCTION_SET_SIZE] =
+            [None; INSTRUCTION_SET_SIZE];
 
-        instructions[0x00] = Some(Instruction { type_: InType::InNop, mode: AddrMode::AmImp,  reg_1: None, reg_2: None, cond: None, param: 0});
-        instructions[0x05] = Some(Instruction { type_: InType::InDec, mode: AddrMode::AmR, reg_1: Some(RegType::RtB), reg_2: None, cond: None, param: 0});
-        instructions[0x0E] = Some(Instruction { type_: InType::InLd, mode: AddrMode::AmRD8, reg_1: Some(RegType::RtC), reg_2: None, cond: None, param: 0});
-        instructions[0xAF] = Some(Instruction { type_: InType::InXor, mode: AddrMode::AmR, reg_1: Some(RegType::RtA), reg_2: None, cond: None, param: 0});
-        instructions[0xC3] = Some(Instruction { type_: InType::InJp, mode: AddrMode::AmD16, reg_1: None, reg_2: None, cond: None, param: 0});
-        instructions[0xF3] = Some(Instruction { type_: InType::InDi, mode: AddrMode::AmImp,  reg_1: None, reg_2: None, cond: None, param: 0});
+        instructions[0x00] = Some(Instruction {
+            type_: InType::InNop,
+            mode: AddrMode::AmImp,
+            reg_1: None,
+            reg_2: None,
+            cond: None,
+            param: 0,
+        });
+        instructions[0x05] = Some(Instruction {
+            type_: InType::InDec,
+            mode: AddrMode::AmR,
+            reg_1: Some(RegType::RtB),
+            reg_2: None,
+            cond: None,
+            param: 0,
+        });
+        instructions[0x0E] = Some(Instruction {
+            type_: InType::InLd,
+            mode: AddrMode::AmRD8,
+            reg_1: Some(RegType::RtC),
+            reg_2: None,
+            cond: None,
+            param: 0,
+        });
+        instructions[0xAF] = Some(Instruction {
+            type_: InType::InXor,
+            mode: AddrMode::AmR,
+            reg_1: Some(RegType::RtA),
+            reg_2: None,
+            cond: None,
+            param: 0,
+        });
+        instructions[0xC3] = Some(Instruction {
+            type_: InType::InJp,
+            mode: AddrMode::AmD16,
+            reg_1: None,
+            reg_2: None,
+            cond: None,
+            param: 0,
+        });
+        instructions[0xF3] = Some(Instruction {
+            type_: InType::InDi,
+            mode: AddrMode::AmImp,
+            reg_1: None,
+            reg_2: None,
+            cond: None,
+            param: 0,
+        });
         instructions
     }};
 }
