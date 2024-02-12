@@ -3,6 +3,7 @@ use crate::cpu::error::CpuError;
 use crate::cpu::flags::FlagMode;
 use crate::cpu::CPU;
 use crate::instructions::{AddrMode, CondType, InType, RegType};
+use crate::instructions::cb::{CbOperation, CbType};
 use crate::util;
 
 impl CPU {
@@ -72,14 +73,6 @@ impl CPU {
 
     fn process_ei(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
         bus.write(0xFFFF, 0x01)?; // Disable all interrupts
-        Ok(0)
-    }
-
-    fn process_xor(&mut self) -> Result<u32, CpuError> {
-        self.registers.a ^= (self.fetch_data & 0xFF) as u8;
-
-        let z = FlagMode::from(self.registers.a == 0);
-        self.cpu_set_flags(z, FlagMode::Clear, FlagMode::Clear, FlagMode::Clear);
         Ok(0)
     }
 
@@ -302,6 +295,67 @@ impl CPU {
         Ok(0)
     }
 
+    fn process_and(&mut self) -> Result<u32, CpuError> {
+        self.registers.a &= (self.fetch_data &0xFF) as u8;
+        let z = FlagMode::from(self.registers.a == 0);
+        self.cpu_set_flags(z, FlagMode::Clear, FlagMode::Set, FlagMode::Clear);
+        Ok(0)
+    }
+
+    fn process_xor(&mut self) -> Result<u32, CpuError> {
+        self.registers.a ^= (self.fetch_data & 0xFF) as u8;
+
+        let z = FlagMode::from(self.registers.a == 0);
+        self.cpu_set_flags(z, FlagMode::Clear, FlagMode::Clear, FlagMode::Clear);
+        Ok(0)
+    }
+
+    fn process_or(&mut self) -> Result<u32, CpuError> {
+        self.registers.a |= (self.fetch_data & 0xFF) as u8;
+        let z = FlagMode::from(self.registers.a == 0);
+        self.cpu_set_flags(z, FlagMode::Clear, FlagMode::Clear, FlagMode::Clear);
+        Ok(0)
+    }
+
+    fn process_cp(&mut self) -> Result<u32, CpuError> {
+        let z = FlagMode::from(self.registers.a == (self.fetch_data & 0xFF) as u8);
+        let h = FlagMode::from((self.registers.a & 0xF) < (self.fetch_data & 0xF) as u8);
+        let c = FlagMode::from(self.registers.a < (self.fetch_data & 0xFF) as u8);
+
+        self.cpu_set_flags(z, FlagMode::Set, h, c);
+        Ok(0)
+    }
+
+    fn process_cb(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
+        let mut cycles = 0;
+        let op = self.fetch_data as u8;
+        let cb_op = CbOperation::from_byte(op).ok_or(CpuError::InvalidCb(op))?;
+        let reg_value = self.cpu_read_r8(Some(cb_op.reg), bus)?;
+
+        cycles += 1;
+        if cb_op.reg == RegType::RtHl {
+            cycles += 2;
+        }
+
+        match cb_op.cb_type {
+            CbType::BIT => {
+                let z = FlagMode::from(!util::check_bit(reg_value, cb_op.bit));
+                self.cpu_set_flags(z, FlagMode::Clear, FlagMode::Set, FlagMode::None);
+            }
+            CbType::RST => {
+                let new_value = util::clear_bit(reg_value, cb_op.bit);
+                self.cpu_write_r8(Some(cb_op.reg), new_value, bus)?;
+            }
+            CbType::SET => {
+                let new_value = util::set_bit(reg_value, cb_op.bit);
+                self.cpu_write_r8(Some(cb_op.reg), new_value, bus)?;
+            }
+        }
+
+        Ok(cycles)
+    }
+
+
     pub(crate) fn process_instruction(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
         return match self.current_instruction.type_ {
             InType::InNop { .. } => Ok(0),
@@ -316,9 +370,6 @@ impl CPU {
             }
             InType::InEi => {
                 return self.process_ei(bus);
-            }
-            InType::InXor => {
-                return self.process_xor();
             }
             InType::InLdh => {
                 return self.process_ldh(bus);
@@ -361,6 +412,18 @@ impl CPU {
             }
             InType::InSbc => {
                 return self.process_sbc();
+            }
+            InType::InAnd => {
+                return self.process_and();
+            }
+            InType::InOr => {
+                return self.process_or();
+            }
+            InType::InCp => {
+                return self.process_cp();
+            }
+            InType::InXor => {
+                return self.process_xor();
             }
             _ => Err(CpuError::InvalidInstruction(self.current_opcode as u32)),
         };

@@ -6,6 +6,7 @@ pub enum CpuError {
     UnknownAddressMode,
     InvalidInstruction(u32),
     InvalidRegister,
+    InvalidCb(u8)
 }
 
 impl From<BusError> for CpuError {

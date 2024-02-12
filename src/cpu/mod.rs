@@ -146,6 +146,56 @@ impl CPU {
         self.write_register(self.current_instruction.reg_2, value)
     }
 
+    pub fn cpu_read_r8(&self, reg: Option<RegType>, bus: &mut BUS) -> Result<u8, CpuError> {
+        let reg = match reg {
+            None => return Err(CpuError::InvalidRegister),
+            Some(r) => r,
+        };
+
+        let val = match reg {
+            RegType::RtA => self.registers.a,
+            RegType::RtF => self.registers.f,
+            RegType::RtB => self.registers.b,
+            RegType::RtC => self.registers.c,
+            RegType::RtD => self.registers.d,
+            RegType::RtE => self.registers.e,
+            RegType::RtH => self.registers.h,
+            RegType::RtL => self.registers.l,
+            RegType::RtHl=> {
+                let addr = self.read_register(Some(RegType::RtHl))?;
+                return Ok(bus.read(addr)?);
+            }
+            _ => return Err(CpuError::InvalidRegister),
+        };
+
+        Ok(val)
+    }
+
+    pub fn cpu_write_r8(&mut self, reg: Option<RegType>, value: u8, bus: &mut BUS) -> Result<(), CpuError> {
+        let reg = match reg {
+            None => return Err(CpuError::InvalidRegister),
+            Some(r) => r,
+        };
+
+        match reg {
+            RegType::RtA => self.registers.a = value,
+            RegType::RtF => self.registers.f = value,
+            RegType::RtB => self.registers.b = value,
+            RegType::RtC => self.registers.c = value,
+            RegType::RtD => self.registers.d = value,
+            RegType::RtE => self.registers.e = value,
+            RegType::RtH => self.registers.h = value,
+            RegType::RtL => self.registers.l = value,
+            RegType::RtHl => {
+                let addr = self.read_register(Some(RegType::RtHl))?;
+                bus.write(addr, value)?;
+            }
+            _ => return Err(CpuError::InvalidRegister),
+        };
+
+        Ok(())
+    }
+
     pub fn execute(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
         return self.process_instruction(bus);
     }
