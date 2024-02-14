@@ -31,6 +31,7 @@ impl CPU {
         if self.dest_is_mem {
             if RegType::is_some_16_bit(self.current_instruction.reg_1) {
                 cycles += 1;
+                self.cycle(1);
                 self.bus.write_16(self.mem_dest, self.fetch_data)?;
             } else {
                 self.bus.write(self.mem_dest, self.fetch_data as u8)?;
@@ -86,13 +87,17 @@ impl CPU {
             self.bus.write(0xFF00 | self.fetch_data, self.registers.a)?;
         }
 
+        self.cycle(1);
         Ok(1)
     }
 
     fn process_pop(&mut self) -> Result<u32, CpuError> {
-        let data = self.stack_pop_16()?;
+        let data_lo = self.stack_pop()? as u16;
+        self.cycle(1);
+        let data_hi = self.stack_pop()? as u16;
+        self.cycle(1);
+        let data = (data_hi << 8) | data_lo;
         self.write_register(self.current_instruction.reg_1, data)?;
-
         if self.current_instruction.reg_1 == Some(RegType::RtAf) {
             self.write_register(self.current_instruction.reg_1, data & 0xFFF0)?;
         }
@@ -101,7 +106,12 @@ impl CPU {
 
     fn process_push(&mut self) -> Result<u32, CpuError> {
         let data = self.read_register_r1()?;
-        self.stack_push_16(data)?;
+        let data_hi = (data >> 8) as u8;
+        let data_lo = (data & 0xFF) as u8;
+        self.stack_push(data_hi)?;
+        self.cycle(1);
+        self.stack_push(data_lo)?;
+        self.cycle(1);
         Ok(2)
     }
 
@@ -113,10 +123,12 @@ impl CPU {
         let mut cycles = 0;
         if push_pc {
             self.stack_push_16(self.registers.pc)?;
+            self.cycle(2);
             cycles += 2;
         }
 
         self.registers.pc = addr;
+        self.cycle(1);
         Ok(cycles + 1)
     }
 
@@ -134,6 +146,7 @@ impl CPU {
         let mut cycles = 0;
         if self.current_instruction.cond != None {
             cycles += 1;
+            self.cycle(1);
         }
 
         if !self.check_condition() {
@@ -141,6 +154,7 @@ impl CPU {
         }
 
         let addr = self.stack_pop_16()?;
+        self.cycle(2);
         cycles += 2;
         self.registers.pc = addr;
         Ok(cycles)
@@ -160,6 +174,7 @@ impl CPU {
         let mut value = self.read_register_r1()?.wrapping_add(1);
         if RegType::is_some_16_bit(self.current_instruction.reg_1) {
             cycles += 1;
+            self.cycle(1);
         }
 
         if (self.current_instruction.reg_1 == Some(RegType::RtHl))
@@ -191,6 +206,7 @@ impl CPU {
         let mut value = self.read_register_r1()? - 1;
         if RegType::is_some_16_bit(self.current_instruction.reg_1) {
             cycles += 1;
+            self.cycle(1);
         }
 
         if (self.current_instruction.reg_1 == Some(RegType::RtHl))
@@ -224,6 +240,7 @@ impl CPU {
 
         if is_16_bit {
             cycles += 1;
+            self.cycle(1);
         }
 
         if self.current_instruction.reg_1 == Some(RegType::RtSp) {
@@ -349,8 +366,10 @@ impl CPU {
         let mut reg_value = self.cpu_read_r8(Some(cb_op.reg))?;
 
         cycles += 1;
+        self.cycle(1);
         if cb_op.reg == RegType::RtHl {
             cycles += 2;
+            self.cycle(2);
         }
 
         match cb_op.cb_bit_ops {

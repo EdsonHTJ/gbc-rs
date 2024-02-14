@@ -1,8 +1,7 @@
-use crate::bus::BUS;
 use crate::cpu::error::CpuError;
 use crate::cpu::CPU;
 use crate::instructions::{AddrMode, Instruction, RegType};
-use crate::log::{Logger, LoggerTrait};
+use crate::log::{LoggerTrait};
 
 impl CPU {
     pub fn fetch_instruction(&mut self) -> Result<(), CpuError> {
@@ -34,17 +33,18 @@ impl CPU {
             AddrMode::AmRD8 => {
                 self.fetch_data = self.bus.read(self.registers.pc)? as u16;
 
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmD16 | AddrMode::AmRD16 => {
                 let low = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+
+                self.cycle(1);
                 self.registers.pc += 1;
 
                 let high = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
 
                 self.fetch_data = (high << 8) | low;
@@ -68,10 +68,12 @@ impl CPU {
                 }
 
                 self.fetch_data = self.bus.read(addr)? as u16;
+                self.cycle(1);
                 Ok(1)
             }
             AddrMode::AmRHli => {
                 self.fetch_data = self.bus.read(self.read_register(Some(RegType::RtHl))?)? as u16;
+                self.cycle(1);
                 self.write_register(
                     Some(RegType::RtHl),
                     self.read_register(Some(RegType::RtHl))? + 1,
@@ -80,6 +82,7 @@ impl CPU {
             }
             AddrMode::AmRHld => {
                 self.fetch_data = self.bus.read(self.read_register(Some(RegType::RtHl))?)? as u16;
+                self.cycle(1);
                 self.write_register(
                     Some(RegType::RtHl),
                     self.read_register(Some(RegType::RtHl))? - 1,
@@ -108,36 +111,36 @@ impl CPU {
             }
             AddrMode::AmRA8 => {
                 self.fetch_data = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmA8R => {
                 self.mem_dest = self.bus.read(self.registers.pc)? as u16;
                 self.dest_is_mem = true;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmHlSpr => {
                 self.fetch_data = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmD8 => {
                 self.fetch_data = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmA16R | AddrMode::AmD16R => {
                 let low = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
 
                 let high = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
 
                 self.mem_dest = (high << 8) | low;
@@ -151,7 +154,7 @@ impl CPU {
             }
             AddrMode::AmMrD8 => {
                 self.fetch_data = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
                 self.mem_dest = self.read_register(self.current_instruction.reg_1)?;
                 self.dest_is_mem = true;
@@ -162,21 +165,21 @@ impl CPU {
                 self.dest_is_mem = true;
                 self.fetch_data =
                     self.bus.read(self.read_register(self.current_instruction.reg_1)?)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 Ok(1)
             }
             AddrMode::AmRA16 => {
                 let low = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
 
                 let high = self.bus.read(self.registers.pc)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 self.registers.pc += 1;
 
                 let addr = (high << 8) | low;
                 self.fetch_data = self.bus.read(addr)? as u16;
-                //Update emulation cycles by 1
+                self.cycle(1);
                 Ok(3)
             }
         };

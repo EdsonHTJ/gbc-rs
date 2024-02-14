@@ -9,6 +9,7 @@ use std::sync::Arc;
 use crate::bus::{BusError, BUS, BusMutex};
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
+use crate::emu::FnCycle;
 use crate::instructions::{AddrMode, Instruction, RegType};
 
 pub struct CpuRegisters {
@@ -37,6 +38,7 @@ pub struct CPU {
     pub int_flags: u8,
     pub ie_register: u8,
     pub bus: BusMutex,
+    pub fn_cycles: Option<FnCycle>,
 }
 
 impl CPU {
@@ -64,13 +66,19 @@ impl CPU {
             enable_ime: false,
             int_flags: 0,
             ie_register: 0,
+            fn_cycles: None,
             bus,
         }
     }
 
-    pub fn reset(&mut self) {
-        let bus = self.bus.clone();
-        *self = CPU::new(bus);
+    pub fn set_fn_cycles(&mut self, fn_cycles: FnCycle) {
+        self.fn_cycles = Some(fn_cycles);
+    }
+
+    pub fn cycle(&mut self, cycles: u32) {
+        if let Some(ref mut fn_cycles) = self.fn_cycles {
+            fn_cycles(cycles);
+        }
     }
 
     pub fn read_register(&self, reg_type: Option<RegType>) -> Result<u16, CpuError> {

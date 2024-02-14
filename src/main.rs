@@ -15,5 +15,5 @@ fn main() {
     emu.run();
     println!("EMU is paused: {}", emu.paused);
     println!("EMU is running: {}", emu.running);
-    println!("EMU ticks: {}", emu.ticks);
+    println!("EMU ticks: {}", emu.tm.get_ticks());
 }

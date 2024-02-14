@@ -15,14 +15,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/emu/tick.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/fetch.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/fetch.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/interrupts.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/interrupts.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/processors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/processors.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/stack.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/stack.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -124,7 +123,7 @@
       <workItem from="1707614791165" duration="7894000" />
       <workItem from="1707659790099" duration="22630000" />
       <workItem from="1707865588274" duration="15637000" />
-      <workItem from="1707931996899" duration="2127000" />
+      <workItem from="1707931996899" duration="5013000" />
     </task>
     <servers />
   </component>
@@ -135,19 +134,29 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/cpu/fetch.rs</url>
-          <line>20</line>
-          <option name="timeStamp" value="24" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/emu/mod.rs</url>
-          <line>55</line>
+          <line>62</line>
           <option name="timeStamp" value="27" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/emu/mod.rs</url>
-          <line>54</line>
+          <line>61</line>
           <option name="timeStamp" value="28" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/emu/mod.rs</url>
+          <line>46</line>
+          <option name="timeStamp" value="29" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/cpu/fetch.rs</url>
+          <line>18</line>
+          <option name="timeStamp" value="30" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/cpu/fetch.rs</url>
+          <line>7</line>
+          <option name="timeStamp" value="31" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
