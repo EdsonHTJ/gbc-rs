@@ -1,10 +1,11 @@
 mod error;
 mod fetch;
 mod flags;
+mod interrupts;
 mod processors;
 mod stack;
 
-use crate::bus::BUS;
+use crate::bus::{BusError, BUS};
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
 use crate::instructions::{AddrMode, Instruction, RegType};
@@ -31,6 +32,9 @@ pub struct CPU {
     pub stepping: bool,
     pub dest_is_mem: bool,
     pub current_instruction: Instruction,
+    pub enable_ime: bool,
+    pub int_flags: u8,
+    pub ie_register: u8,
 }
 
 impl CPU {
@@ -55,6 +59,9 @@ impl CPU {
             stepping: false,
             dest_is_mem: false,
             current_instruction: Instruction::new(),
+            enable_ime: false,
+            int_flags: 0,
+            ie_register: 0,
         }
     }
 
@@ -77,12 +84,32 @@ impl CPU {
             RegType::RtE => self.registers.e as u16,
             RegType::RtH => self.registers.h as u16,
             RegType::RtL => self.registers.l as u16,
-            RegType::RtAf => (self.registers.a as u16) << 8 | self.registers.f as u16,
-            RegType::RtBc => (self.registers.b as u16) << 8 | self.registers.c as u16,
-            RegType::RtDe => (self.registers.d as u16) << 8 | self.registers.e as u16,
-            RegType::RtHl => (self.registers.h as u16) << 8 | self.registers.l as u16,
             RegType::RtSp => self.registers.sp,
             RegType::RtPc => self.registers.pc,
+            RegType::RtAf => {
+                let high = self.registers.a as u16;
+                let low = self.registers.f as u16;
+                let value = (high << 8) | low;
+                value
+            }
+            RegType::RtBc => {
+                let high = self.registers.b as u16;
+                let low = self.registers.c as u16;
+                let value = (high << 8) | low;
+                value
+            }
+            RegType::RtDe => {
+                let high = self.registers.d as u16;
+                let low = self.registers.e as u16;
+                let value = (high << 8) | low;
+                value
+            }
+            RegType::RtHl => {
+                let high = self.registers.h as u16;
+                let low = self.registers.l as u16;
+                let value = (high << 8) | low;
+                value
+            }
         };
 
         Ok(value)
@@ -161,7 +188,7 @@ impl CPU {
             RegType::RtE => self.registers.e,
             RegType::RtH => self.registers.h,
             RegType::RtL => self.registers.l,
-            RegType::RtHl=> {
+            RegType::RtHl => {
                 let addr = self.read_register(Some(RegType::RtHl))?;
                 return Ok(bus.read(addr)?);
             }
@@ -171,7 +198,12 @@ impl CPU {
         Ok(val)
     }
 
-    pub fn cpu_write_r8(&mut self, reg: Option<RegType>, value: u8, bus: &mut BUS) -> Result<(), CpuError> {
+    pub fn cpu_write_r8(
+        &mut self,
+        reg: Option<RegType>,
+        value: u8,
+        bus: &mut BUS,
+    ) -> Result<(), CpuError> {
         let reg = match reg {
             None => return Err(CpuError::InvalidRegister),
             Some(r) => r,
@@ -198,5 +230,17 @@ impl CPU {
 
     pub fn execute(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
         return self.process_instruction(bus);
+    }
+
+    pub fn get_interruption_master_enable(&self, bus: &mut BUS) -> Result<u8, BusError> {
+        return bus.read(0xFFFF);
+    }
+
+    pub fn set_interruption_master_enable(
+        &mut self,
+        bus: &mut BUS,
+        value: u8,
+    ) -> Result<(), BusError> {
+        return bus.write(0xFFFF, value);
     }
 }

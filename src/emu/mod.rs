@@ -3,8 +3,8 @@ use crate::cartridge::Cartridge;
 use crate::cpu::CPU;
 use crate::gfx::color::Color;
 use crate::gfx::Gfx;
-use std::time::Duration;
 use crate::log::{Logger, LoggerTrait};
+use std::time::Duration;
 
 pub struct EMU {
     pub paused: bool,
@@ -44,11 +44,11 @@ impl EMU {
 
     fn emu_loop(&mut self) {
         let mut i = self.ticks;
-        i = (i + 1) % 255;
+        i = (i + 1);
         //canvas.clear();
-        self.gfx
-            .draw_pixel(i as i32, i as i32, Color::new(255, 0, 0))
-            .unwrap();
+        //self.gfx
+          //  .draw_pixel(i as i32, i as i32, Color::new(255, 0, 0))
+          //  .unwrap();
         let event_pump = self.gfx.get_user_events();
         for event in &event_pump {
             match event {
@@ -62,30 +62,53 @@ impl EMU {
                 _ => {}
             }
         }
+
         // The rest of the game loop goes here...
 
-        self.gfx.present();
+        //self.gfx.present();
     }
 
     pub fn cycle(&mut self, cycles: u32) -> () {
-        for _ in 0..cycles {
+        /*for _ in 0..cycles {
             for _ in 0..4 {
                 self.ticks += 1;
             }
         }
+
+        */
     }
 
     pub fn step_cpu(&mut self) -> () {
-        print!("Ticks: {:08X} ", self.ticks);
-        let old_pc = self.cpu.registers.pc.clone();
-        self.cpu.fetch_instruction(&mut self.bus).unwrap();
-        let cycles = self.cpu.fetch_data(&mut self.bus).unwrap();
-        self.cycle(cycles);
-      //  Logger::log_cpu(&self.cpu);
-      //  Logger::log_instruction(&self.cpu.current_instruction);
-        print!("OLDPC: {:04X} ", old_pc);
-        Logger::log_cpu_state_with_instruction(&self.cpu);
-        self.cpu.execute(&mut self.bus).unwrap();
+        if !self.cpu.halted {
+            print!("Ticks: {:08X}", self.ticks);
+            let old_pc = self.cpu.registers.pc.clone();
+            self.cpu.fetch_instruction(&mut self.bus).unwrap();
+            print!(" OLDPC: {:04X} ", old_pc);
+            Logger::log_cpu_state_with_instruction(&self.cpu);
+            let cycles = self.cpu.fetch_data(&mut self.bus).unwrap();
+            self.cycle(cycles);
+            self.cpu.execute(&mut self.bus).unwrap();
+        } else {
+            self.cycle(1);
+            if self.cpu.int_flags != 0 {
+                self.cpu.halted = false;
+            }
+        }
+
+        if self
+            .cpu
+            .get_interruption_master_enable(&mut self.bus)
+            .unwrap()
+            != 0
+        {
+            self.cpu.enable_ime = false;
+        }
+
+        if self.cpu.enable_ime {
+            self.cpu
+                .set_interruption_master_enable(&mut self.bus, 1)
+                .unwrap()
+        }
     }
 
     pub fn run(&mut self) -> () {

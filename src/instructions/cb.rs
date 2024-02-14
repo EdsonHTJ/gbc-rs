@@ -1,37 +1,59 @@
 use crate::instructions::RegType;
 
-
-pub enum CbType {
+pub enum CbBitOps {
     BIT,
     RST,
     SET,
 }
 
+pub enum CbOps {
+    RLC,
+    RRC,
+    RL,
+    RR,
+    SRA,
+    SWAP,
+    SRL,
+}
+
 pub struct CbOperation {
-    pub cb_type: CbType,
+    pub cb_bit_ops: Option<CbBitOps>,
+    pub cb_ops: Option<CbOps>,
     pub bit: u8,
     pub reg: RegType,
 }
 
 impl CbOperation {
     pub fn from_byte(byte: u8) -> Option<CbOperation> {
-        let cb_type = match (byte >> 6) & 0x3 {
-            0 => CbType::BIT,
-            1 => CbType::RST,
-            2 => CbType::SET,
-            _ => return None,
+        let cb_bit_ops = match (byte >> 6) & 0x3 {
+            1 => Some(CbBitOps::BIT),
+            2 => Some(CbBitOps::RST),
+            3 => Some(CbBitOps::SET),
+            _ => None,
         };
 
         let bit = (byte >> 3) & 0x7;
+        let bit_ops = match bit {
+            1 => Some(CbOps::RLC),
+            2 => Some(CbOps::RRC),
+            3 => Some(CbOps::RL),
+            4 => Some(CbOps::RR),
+            5 => Some(CbOps::SRA),
+            6 => Some(CbOps::SWAP),
+            7 => Some(CbOps::SRL),
+            _ => None,
+        };
+
         let reg = RegType::from_cb_u8(byte & 0x7);
         if reg.is_none() {
             return None;
         }
 
         Some(CbOperation {
-            cb_type,
+            cb_bit_ops,
+            cb_ops: bit_ops,
             bit,
-            reg: reg.unwrap()
+            reg: reg.unwrap(),
         })
     }
 }
@@ -51,6 +73,3 @@ impl RegType {
         }
     }
 }
-
-
-

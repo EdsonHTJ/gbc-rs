@@ -17,6 +17,10 @@ impl CPU {
         self.mem_dest = 0;
         self.dest_is_mem = false;
 
+        if self.current_opcode == 0xFA {
+            println!("Fetching data for opcode 0xFA");
+        }
+
         return match self.current_instruction.mode {
             AddrMode::AmImp => Ok((0)),
             AddrMode::AmR => {
@@ -138,7 +142,11 @@ impl CPU {
 
                 self.mem_dest = (high << 8) | low;
                 self.dest_is_mem = true;
-                self.fetch_data = self.read_register(self.current_instruction.reg_2)?;
+                if self.current_instruction.reg_2.is_some() {
+                    self.fetch_data = self.read_register(self.current_instruction.reg_2)?;
+                } else {
+                    self.fetch_data = 0;
+                }
                 Ok(2)
             }
             AddrMode::AmMrD8 => {

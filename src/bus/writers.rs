@@ -1,5 +1,5 @@
-use crate::bus::{BUS, BusError};
 use crate::bus::addresses::AddrSpace;
+use crate::bus::{BusError, BUS};
 
 pub trait BusWriter {
     fn write(&self, bus: &mut BUS, address: u16, data: u8) -> Result<(), BusError>;
@@ -16,6 +16,7 @@ impl BusWriter for NoneWriter {
     }
 
     fn read(&self, _bus: &mut BUS, _address: u16) -> Result<u8, BusError> {
+        //panic!("Trying to read from a non readable region")
         Ok(0)
     }
 }
@@ -56,33 +57,16 @@ impl BusWriter for WRamWriter {
     }
 }
 
-
 pub fn get_writer_by_region(region: AddrSpace) -> Result<WriterPtr, BusError> {
     match region {
-        AddrSpace::ROM0 | AddrSpace::ROM1  | AddrSpace::CRAM=> {
-            Ok(Box::new(CartridgeWriter{}))
-        },
-        AddrSpace::BG1 | AddrSpace::BG2 => {
-            todo!()
-        },
-        AddrSpace::RAM0 | AddrSpace::RAM1 | AddrSpace::ZP => {
-            Ok(Box::new(WRamWriter{}))
-        }
-        AddrSpace::ECHO => {
-            Ok(Box::new(NoneWriter{}))
-        }
-        AddrSpace::OAM => {
-            todo!()
-        }
-        AddrSpace::UNUSABLE => {
-            Ok(Box::new(NoneWriter{}))
-        }
-        AddrSpace::IO => {
-            Ok(Box::new(NoneWriter{}))
-        }
-        AddrSpace::INTERRUPT => {
-            Ok(Box::new(InterruptionWriter{}))
-        }
-        _ => Err(BusError::NotImplemented),
+        AddrSpace::ROM0 | AddrSpace::ROM1 | AddrSpace::CRAM => Ok(Box::new(CartridgeWriter {})),
+        AddrSpace::BG1 | AddrSpace::BG2 => Ok(Box::new(NoneWriter {})),
+        AddrSpace::RAM0 | AddrSpace::RAM1 | AddrSpace::ZP => Ok(Box::new(WRamWriter {})),
+        AddrSpace::ECHO => Ok(Box::new(NoneWriter {})),
+        AddrSpace::OAM => Ok(Box::new(NoneWriter {})),
+        AddrSpace::UNUSABLE => Ok(Box::new(NoneWriter {})),
+        AddrSpace::IO => Ok(Box::new(NoneWriter {})),
+        AddrSpace::INTERRUPT => Ok(Box::new(InterruptionWriter {})),
+        _ => Ok(Box::new(NoneWriter {})),
     }
 }

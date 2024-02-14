@@ -26,11 +26,11 @@ impl CPU {
         return util::check_bit(self.registers.f, 4);
     }
 
-    fn get_n_flag(&self) -> bool {
+    pub(crate) fn get_n_flag(&self) -> bool {
         return util::check_bit(self.registers.f, 5);
     }
 
-    fn get_h_flag(&self) -> bool {
+    pub(crate) fn get_h_flag(&self) -> bool {
         return util::check_bit(self.registers.f, 6);
     }
 

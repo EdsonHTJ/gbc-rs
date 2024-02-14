@@ -1,4 +1,3 @@
-
 macro_rules! create_instructions {
     () => {{
         let mut instructions: [Option<Instruction>; INSTRUCTION_SET_SIZE] =
@@ -2003,4 +2002,4 @@ macro_rules! create_instructions {
     }};
 }
 
-pub (crate) use create_instructions;
+pub(crate) use create_instructions;

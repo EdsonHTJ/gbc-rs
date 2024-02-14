@@ -10,7 +10,6 @@ pub trait LoggerTrait {
 
 pub struct Logger {}
 
-
 #[cfg(not(feature = "log"))]
 impl LoggerTrait for Logger {
     fn log(_message: &str) {}
@@ -19,7 +18,7 @@ impl LoggerTrait for Logger {
 
     fn log_instruction(_instruction: &Instruction) {}
 
-    fn log_cpu_state_with_instruction(cpu: &CPU){}
+    fn log_cpu_state_with_instruction(cpu: &CPU) {}
 }
 
 #[cfg(feature = "log")]
@@ -46,8 +45,8 @@ impl LoggerTrait for Logger {
         // PC: Instruction, AddressMode, Reg1, Reg2 A: B: C: D: E: H: L: F: SP:
         // Make it use the same space
 
-        println!("PC: {:04X}: {:?} AddressMode: {:?} Reg1: {:?} Reg2: {:?} A: {:02X} B: {:02X} C: {:02X} D: {:02X} E: {:02X} H: {:02X} L: {:02X} F: {:02X} SP: {:04X}",
-                 cpu.registers.pc, cpu.current_instruction.type_, cpu.current_instruction.mode, cpu.current_instruction.reg_1, cpu.current_instruction.reg_2,
-                 cpu.registers.a, cpu.registers.b, cpu.registers.c, cpu.registers.d, cpu.registers.e, cpu.registers.h, cpu.registers.l, cpu.registers.f, cpu.registers.sp);
+        println!("PC: {:04X}: OP:{:02X} {:?} Reg1: {:?} Reg2: {:?} A: {:02X} B: {:02X} C: {:02X} D: {:02X} E: {:02X} H: {:02X} L: {:02X} F: {:02X} SP: {:04X} Z: {} N: {} H: {} C: {}",
+                 cpu.registers.pc, cpu.current_opcode,cpu.current_instruction.type_, cpu.current_instruction.reg_1, cpu.current_instruction.reg_2,
+                 cpu.registers.a, cpu.registers.b, cpu.registers.c, cpu.registers.d, cpu.registers.e, cpu.registers.h, cpu.registers.l, cpu.registers.f, cpu.registers.sp, cpu.get_z_flag() as u8, cpu.get_n_flag() as u8, cpu.get_h_flag() as u8, cpu.get_c_flag() as u8);
     }
 }

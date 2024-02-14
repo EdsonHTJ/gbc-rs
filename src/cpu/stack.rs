@@ -1,6 +1,6 @@
 use crate::bus::BUS;
-use crate::cpu::CPU;
 use crate::cpu::error::CpuError;
+use crate::cpu::CPU;
 
 impl CPU {
     pub fn stack_push(&mut self, bus: &mut BUS, data: u8) -> Result<(), CpuError> {

@@ -4,13 +4,13 @@ mod cpu;
 mod emu;
 mod gfx;
 mod instructions;
-mod util;
-mod ram;
 mod log;
+mod ram;
+mod util;
 
 fn main() {
     let mut emu = emu::EMU::default();
-    let filename = "./games/mem_timing.gb".to_string();
+    let filename = "./games/dmg-acid2.gb".to_string();
     emu.load_game(filename);
     emu.run();
     println!("EMU is paused: {}", emu.paused);

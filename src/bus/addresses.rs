@@ -31,7 +31,7 @@ pub enum AddrSpace {
     UNUSABLE,
     IO,
     ZP,
-    INTERRUPT
+    INTERRUPT,
 }
 
 impl AddrSpace {
@@ -82,7 +82,7 @@ impl AddrSpace {
             AddrSpace::RAM1 | AddrSpace::RAM0 | AddrSpace::ZP => {
                 let (start, end) = region.get_region();
                 Ok(address - start)
-            },
+            }
             _ => Err(BusError::InvalidAddress),
         }
     }

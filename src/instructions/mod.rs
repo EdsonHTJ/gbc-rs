@@ -1,8 +1,8 @@
-mod r#macro;
 pub mod cb;
+mod r#macro;
 
-use sdl2::mouse::SystemCursor::No;
 use crate::instructions::r#macro::create_instructions;
+use sdl2::mouse::SystemCursor::No;
 
 // Addressing modes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,7 +52,11 @@ pub enum RegType {
 impl RegType {
     pub fn is_16_bit(&self) -> bool {
         match self {
-            RegType::RtAf | RegType::RtBc | RegType::RtDe | RegType::RtHl | RegType::RtSp
+            RegType::RtAf
+            | RegType::RtBc
+            | RegType::RtDe
+            | RegType::RtHl
+            | RegType::RtSp
             | RegType::RtPc => true,
             _ => false,
         }

@@ -28,7 +28,11 @@ pub struct BUS {
 
 impl BUS {
     pub fn new() -> BUS {
-        BUS { cartridge: None, ram: Ram::new(), interrupt_register: 0 }
+        BUS {
+            cartridge: None,
+            ram: Ram::new(),
+            interrupt_register: 0,
+        }
     }
 
     pub fn load_game(&mut self, rom: Vec<u8>) -> Result<(), CartridgeError> {
