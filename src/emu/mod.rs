@@ -1,4 +1,5 @@
-use crate::bus::BUS;
+use std::sync::Arc;
+use crate::bus::{BUS, BusMutex};
 use crate::cartridge::Cartridge;
 use crate::cpu::CPU;
 use crate::gfx::color::Color;
@@ -10,7 +11,7 @@ pub struct EMU {
     pub paused: bool,
     pub running: bool,
     pub ticks: u64,
-    pub bus: BUS,
+    pub bus: BusMutex,
     pub cpu: CPU,
     pub gfx: Box<dyn Gfx>,
 }
@@ -19,12 +20,13 @@ pub type FnCycle<'a> = Box<dyn FnMut(u32) + 'a>;
 
 impl EMU {
     pub fn default() -> EMU {
+        let bus = BusMutex::new();
         EMU {
             paused: false,
             running: false,
             ticks: 0,
-            bus: BUS::new(),
-            cpu: CPU::new(),
+            bus: bus.clone(),
+            cpu: CPU::new(bus.clone()),
             gfx: Box::new(crate::gfx::sdl::SDL::new().unwrap()),
         }
     }
@@ -82,12 +84,12 @@ impl EMU {
         if !self.cpu.halted {
             print!("Ticks: {:08X}", self.ticks);
             let old_pc = self.cpu.registers.pc.clone();
-            self.cpu.fetch_instruction(&mut self.bus).unwrap();
+            self.cpu.fetch_instruction().unwrap();
             print!(" OLDPC: {:04X} ", old_pc);
             Logger::log_cpu_state_with_instruction(&self.cpu);
-            let cycles = self.cpu.fetch_data(&mut self.bus).unwrap();
+            let cycles = self.cpu.fetch_data().unwrap();
             self.cycle(cycles);
-            self.cpu.execute(&mut self.bus).unwrap();
+            self.cpu.execute().unwrap();
         } else {
             self.cycle(1);
             if self.cpu.int_flags != 0 {
@@ -97,7 +99,7 @@ impl EMU {
 
         if self
             .cpu
-            .get_interruption_master_enable(&mut self.bus)
+            .get_interruption_master_enable()
             .unwrap()
             != 0
         {
@@ -106,7 +108,7 @@ impl EMU {
 
         if self.cpu.enable_ime {
             self.cpu
-                .set_interruption_master_enable(&mut self.bus, 1)
+                .set_interruption_master_enable(1)
                 .unwrap()
         }
     }

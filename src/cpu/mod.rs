@@ -5,7 +5,8 @@ mod interrupts;
 mod processors;
 mod stack;
 
-use crate::bus::{BusError, BUS};
+use std::sync::Arc;
+use crate::bus::{BusError, BUS, BusMutex};
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
 use crate::instructions::{AddrMode, Instruction, RegType};
@@ -35,10 +36,11 @@ pub struct CPU {
     pub enable_ime: bool,
     pub int_flags: u8,
     pub ie_register: u8,
+    pub bus: BusMutex,
 }
 
 impl CPU {
-    pub fn new() -> CPU {
+    pub fn new(bus: BusMutex) -> CPU {
         CPU {
             registers: CpuRegisters {
                 a: 0x01,
@@ -62,11 +64,13 @@ impl CPU {
             enable_ime: false,
             int_flags: 0,
             ie_register: 0,
+            bus,
         }
     }
 
     pub fn reset(&mut self) {
-        *self = CPU::new();
+        let bus = self.bus.clone();
+        *self = CPU::new(bus);
     }
 
     pub fn read_register(&self, reg_type: Option<RegType>) -> Result<u16, CpuError> {
@@ -173,7 +177,7 @@ impl CPU {
         self.write_register(self.current_instruction.reg_2, value)
     }
 
-    pub fn cpu_read_r8(&self, reg: Option<RegType>, bus: &mut BUS) -> Result<u8, CpuError> {
+    pub fn cpu_read_r8(&mut self, reg: Option<RegType>) -> Result<u8, CpuError> {
         let reg = match reg {
             None => return Err(CpuError::InvalidRegister),
             Some(r) => r,
@@ -190,7 +194,7 @@ impl CPU {
             RegType::RtL => self.registers.l,
             RegType::RtHl => {
                 let addr = self.read_register(Some(RegType::RtHl))?;
-                return Ok(bus.read(addr)?);
+                return Ok(self.bus.read(addr)?);
             }
             _ => return Err(CpuError::InvalidRegister),
         };
@@ -202,7 +206,6 @@ impl CPU {
         &mut self,
         reg: Option<RegType>,
         value: u8,
-        bus: &mut BUS,
     ) -> Result<(), CpuError> {
         let reg = match reg {
             None => return Err(CpuError::InvalidRegister),
@@ -220,7 +223,7 @@ impl CPU {
             RegType::RtL => self.registers.l = value,
             RegType::RtHl => {
                 let addr = self.read_register(Some(RegType::RtHl))?;
-                bus.write(addr, value)?;
+                self.bus.write(addr, value)?;
             }
             _ => return Err(CpuError::InvalidRegister),
         };
@@ -228,19 +231,18 @@ impl CPU {
         Ok(())
     }
 
-    pub fn execute(&mut self, bus: &mut BUS) -> Result<u32, CpuError> {
-        return self.process_instruction(bus);
+    pub fn execute(&mut self) -> Result<u32, CpuError> {
+        return self.process_instruction();
     }
 
-    pub fn get_interruption_master_enable(&self, bus: &mut BUS) -> Result<u8, BusError> {
-        return bus.read(0xFFFF);
+    pub fn get_interruption_master_enable(&mut self) -> Result<u8, BusError> {
+        return self.bus.read(0xFFFF);
     }
 
     pub fn set_interruption_master_enable(
         &mut self,
-        bus: &mut BUS,
         value: u8,
     ) -> Result<(), BusError> {
-        return bus.write(0xFFFF, value);
+        return self.bus.write(0xFFFF, value);
     }
 }

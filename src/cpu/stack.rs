@@ -3,27 +3,27 @@ use crate::cpu::error::CpuError;
 use crate::cpu::CPU;
 
 impl CPU {
-    pub fn stack_push(&mut self, bus: &mut BUS, data: u8) -> Result<(), CpuError> {
+    pub fn stack_push(&mut self, data: u8) -> Result<(), CpuError> {
         self.registers.sp -= 1;
-        bus.write(self.registers.sp, data)?;
+        self.bus.write(self.registers.sp, data)?;
         Ok(())
     }
 
-    pub fn stack_pop(&mut self, bus: &mut BUS) -> Result<u8, CpuError> {
-        let data = bus.read(self.registers.sp)?;
+    pub fn stack_pop(&mut self) -> Result<u8, CpuError> {
+        let data = self.bus.read(self.registers.sp)?;
         self.registers.sp += 1;
         Ok(data)
     }
 
-    pub fn stack_push_16(&mut self, bus: &mut BUS, data: u16) -> Result<(), CpuError> {
-        self.stack_push(bus, (data >> 8) as u8)?;
-        self.stack_push(bus, (data & 0xFF) as u8)?;
+    pub fn stack_push_16(&mut self, data: u16) -> Result<(), CpuError> {
+        self.stack_push((data >> 8) as u8)?;
+        self.stack_push((data & 0xFF) as u8)?;
         Ok(())
     }
 
-    pub fn stack_pop_16(&mut self, bus: &mut BUS) -> Result<u16, CpuError> {
-        let low = self.stack_pop(bus)? as u16;
-        let high = self.stack_pop(bus)? as u16;
+    pub fn stack_pop_16(&mut self) -> Result<u16, CpuError> {
+        let low = self.stack_pop()? as u16;
+        let high = self.stack_pop()? as u16;
         Ok((high << 8) | low)
     }
 }

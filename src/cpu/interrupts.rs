@@ -47,8 +47,8 @@ impl InterruptType {
 }
 
 impl CPU {
-    pub fn interrupt_handler(&mut self, addr: u16, bus: &mut BUS) -> Result<(), CpuError> {
-        self.stack_push_16(bus, self.registers.pc)?;
+    pub fn interrupt_handler(&mut self, addr: u16) -> Result<(), CpuError> {
+        self.stack_push_16(self.registers.pc)?;
         self.registers.pc = addr;
 
         Ok(())
@@ -58,15 +58,14 @@ impl CPU {
         &mut self,
         addr: u16,
         interrupt_type: InterruptType,
-        bus: &mut BUS,
     ) -> Result<bool, CpuError> {
         if (interrupt_type.value_has_interrupt(self.int_flags as u32)
             && interrupt_type.value_has_interrupt(self.ie_register as u32))
         {
-            self.interrupt_handler(addr, bus)?;
+            self.interrupt_handler(addr)?;
             self.int_flags = interrupt_type.value_remove_interrupt(self.int_flags as u32) as u8;
             self.halted = false;
-            self.set_interruption_master_enable(bus, 0)?;
+            self.set_interruption_master_enable(0)?;
             return Ok(true);
         }
 
@@ -74,19 +73,19 @@ impl CPU {
     }
 
     pub fn handler_interrupts(&mut self, bus: &mut BUS) -> Result<(), CpuError> {
-        if self.interruption_check(0x40, InterruptType::VBlank, bus)? {
+        if self.interruption_check(0x40, InterruptType::VBlank)? {
             return Ok(());
         }
-        if self.interruption_check(0x48, InterruptType::LcdStart, bus)? {
+        if self.interruption_check(0x48, InterruptType::LcdStart)? {
             return Ok(());
         }
-        if self.interruption_check(0x50, InterruptType::Timer, bus)? {
+        if self.interruption_check(0x50, InterruptType::Timer)? {
             return Ok(());
         }
-        if self.interruption_check(0x58, InterruptType::Serial, bus)? {
+        if self.interruption_check(0x58, InterruptType::Serial)? {
             return Ok(());
         }
-        if self.interruption_check(0x60, InterruptType::JoyPad, bus)? {
+        if self.interruption_check(0x60, InterruptType::JoyPad)? {
             return Ok(());
         }
         Ok(())

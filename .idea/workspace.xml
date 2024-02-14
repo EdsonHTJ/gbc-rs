@@ -15,24 +15,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/cpu/interrupts.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bus/addresses.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/addresses.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bus/writers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/writers.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/error.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/fetch.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/fetch.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/flags.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/flags.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cpu/interrupts.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/interrupts.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/processors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/processors.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/stack.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/stack.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/instructions/cb.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/instructions/cb.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/instructions/macro.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/instructions/macro.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/instructions/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/instructions/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/log/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/log/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ram/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ram/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -134,7 +124,7 @@
       <workItem from="1707614791165" duration="7894000" />
       <workItem from="1707659790099" duration="22630000" />
       <workItem from="1707865588274" duration="15637000" />
-      <workItem from="1707931996899" duration="943000" />
+      <workItem from="1707931996899" duration="2127000" />
     </task>
     <servers />
   </component>
@@ -151,12 +141,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/emu/mod.rs</url>
-          <line>53</line>
+          <line>55</line>
           <option name="timeStamp" value="27" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/emu/mod.rs</url>
-          <line>52</line>
+          <line>54</line>
           <option name="timeStamp" value="28" />
         </line-breakpoint>
       </breakpoints>

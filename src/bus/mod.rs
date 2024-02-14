@@ -1,6 +1,7 @@
 mod addresses;
 mod writers;
 
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use crate::bus::addresses::AddrSpace;
 use crate::cartridge::{Cartridge, CartridgeError};
 use crate::ram::{Ram, RamError};
@@ -12,11 +13,62 @@ pub enum BusError {
     CartridgeError(CartridgeError),
     InvalidAddress,
     RamError(RamError),
+    MutexError
+}
+
+impl From<CartridgeError> for BusError {
+    fn from(e: CartridgeError) -> BusError {
+        BusError::CartridgeError(e)
+    }
 }
 
 impl From<RamError> for BusError {
     fn from(e: RamError) -> BusError {
         BusError::RamError(e)
+    }
+}
+
+impl From<PoisonError<MutexGuard<'_, BUS>>> for BusError {
+    fn from(_: PoisonError<MutexGuard<'_, BUS>>) -> BusError {
+        BusError::MutexError
+    }
+}
+
+#[derive(Clone)]
+pub struct BusMutex {
+    pub bus: Arc<Mutex<BUS>>,
+}
+
+impl BusMutex {
+    pub fn new() -> BusMutex {
+        BusMutex {
+            bus: Arc::new(Mutex::new(BUS::new())),
+        }
+    }
+
+    pub fn load_game(&self, rom: Vec<u8>) -> Result<(), BusError> {
+        let mut bus = self.bus.lock()?;
+        bus.load_game(rom)
+    }
+
+    pub fn read(&self, address: u16) -> Result<u8, BusError> {
+        let mut bus = self.bus.lock()?;
+        bus.read(address)
+    }
+
+    pub fn read_16(&self, address: u16) -> Result<u16, BusError> {
+        let mut bus = self.bus.lock()?;
+        bus.read_16(address)
+    }
+
+    pub fn write(&self, address: u16, data: u8) -> Result<(), BusError> {
+        let mut bus = self.bus.lock()?;
+        bus.write(address, data)
+    }
+
+    pub fn write_16(&self, address: u16, data: u16) -> Result<(), BusError> {
+        let mut bus = self.bus.lock()?;
+        bus.write_16(address, data)
     }
 }
 
@@ -35,7 +87,7 @@ impl BUS {
         }
     }
 
-    pub fn load_game(&mut self, rom: Vec<u8>) -> Result<(), CartridgeError> {
+    pub fn load_game(&mut self, rom: Vec<u8>) -> Result<(), BusError> {
         let cartridge = Cartridge::new(rom)?;
         self.cartridge = Some(cartridge);
         Ok(())
