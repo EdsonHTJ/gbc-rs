@@ -1,5 +1,8 @@
 pub const ROM_HEADER_START: usize = 0x100;
+
+#[allow(dead_code)]
 const ROM_CHECKSUM_START: usize = 0x134;
+#[allow(dead_code)]
 const ROM_CHECKSUM_END: usize = 0x14C;
 
 #[derive(Debug)]
@@ -105,6 +108,7 @@ impl Cartridge {
         })
     }
 
+    #[allow(dead_code)]
     pub fn validate_checksum(&self) -> bool {
         let mut sum: u16 = 0;
         for byte in &self.rom_data[ROM_CHECKSUM_START..ROM_CHECKSUM_END + 1] {
@@ -114,6 +118,7 @@ impl Cartridge {
         (sum & 0xff) as u8 == self.rom_header.checksum
     }
 
+    #[allow(dead_code)]
     pub fn read_title(&self) -> String {
         let title = self.rom_header.title.to_vec();
         let title = title.split(|&x| x == 0).collect::<Vec<_>>()[0];

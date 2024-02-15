@@ -1,13 +1,13 @@
 use crate::cpu::error::CpuError;
 use crate::cpu::CPU;
 use crate::instructions::{AddrMode, Instruction, RegType};
-use crate::log::{LoggerTrait};
 
 impl CPU {
     pub fn fetch_instruction(&mut self) -> Result<(), CpuError> {
         self.current_opcode = self.bus.read(self.registers.pc)?;
         self.current_instruction = Instruction::by_opcode(self.current_opcode)
             .ok_or(CpuError::InvalidInstruction(self.current_opcode as u32))?;
+        self.previous_pc = self.registers.pc;
         self.registers.pc += 1;
         Ok(())
     }
@@ -21,7 +21,7 @@ impl CPU {
         }
 
         return match self.current_instruction.mode {
-            AddrMode::AmImp => Ok((0)),
+            AddrMode::AmImp => Ok(0),
             AddrMode::AmR => {
                 self.fetch_data = self.read_register(self.current_instruction.reg_1)?;
                 Ok(0)
@@ -55,7 +55,7 @@ impl CPU {
                 self.mem_dest = self.read_register(self.current_instruction.reg_1)?;
                 self.dest_is_mem = true;
 
-                if (self.current_instruction.reg_1 == Some(RegType::RtC)) {
+                if self.current_instruction.reg_1 == Some(RegType::RtC) {
                     self.mem_dest |= 0xFF00;
                 }
 
@@ -63,7 +63,7 @@ impl CPU {
             }
             AddrMode::AmRMR => {
                 let addr = self.read_register(self.current_instruction.reg_2)?;
-                if (self.current_instruction.reg_1 == Some(RegType::RtC)) {
+                if self.current_instruction.reg_1 == Some(RegType::RtC) {
                     self.mem_dest |= 0xFF00;
                 }
 

@@ -54,6 +54,7 @@ impl AddrSpace {
         }
     }
 
+    #[allow(unreachable_patterns)]
     pub fn from_address(address: &u16) -> Result<Self, BusError> {
         let region = match address {
             0x0000..=0x3FFF => AddrSpace::ROM0,
@@ -70,20 +71,16 @@ impl AddrSpace {
             0xFF00..=0xFF7F => AddrSpace::IO,
             0xFF80..=0xFFFE => AddrSpace::ZP,
             0xFFFF => AddrSpace::INTERRUPT,
-            _ => return Err(BusError::NotImplemented),
+            _ => return Err(BusError::InvalidAddress),
         };
 
         Ok(region)
     }
 
-    pub fn get_ram_offset(address: u16) -> Result<u16, BusError> {
+
+    pub fn get_region_offset(address: u16) -> Result<u16, BusError> {
         let region = AddrSpace::from_address(&address)?;
-        match region {
-            AddrSpace::RAM1 | AddrSpace::RAM0 | AddrSpace::ZP => {
-                let (start, end) = region.get_region();
-                Ok(address - start)
-            }
-            _ => Err(BusError::InvalidAddress),
-        }
+        let (start, _) = region.get_region();
+        Ok(address - start)
     }
 }

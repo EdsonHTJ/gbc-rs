@@ -1,4 +1,3 @@
-use crate::bus::BUS;
 use crate::cpu::error::CpuError;
 use crate::cpu::CPU;
 
@@ -21,6 +20,7 @@ impl InterruptType {
         }
     }
 
+    #[allow(dead_code)]
     pub fn value_add_interrupt(&self, value: u32) -> u32 {
         match self {
             InterruptType::VBlank => value | 0x01,
@@ -59,8 +59,8 @@ impl CPU {
         addr: u16,
         interrupt_type: InterruptType,
     ) -> Result<bool, CpuError> {
-        if (interrupt_type.value_has_interrupt(self.int_flags as u32)
-            && interrupt_type.value_has_interrupt(self.ie_register as u32))
+        if interrupt_type.value_has_interrupt(self.int_flags as u32)
+            && interrupt_type.value_has_interrupt(self.ie_register as u32)
         {
             self.interrupt_handler(addr)?;
             self.int_flags = interrupt_type.value_remove_interrupt(self.int_flags as u32) as u8;
@@ -72,7 +72,7 @@ impl CPU {
         Ok(false)
     }
 
-    pub fn handler_interrupts(&mut self, bus: &mut BUS) -> Result<(), CpuError> {
+    pub fn handler_interrupts(&mut self) -> Result<(), CpuError> {
         if self.interruption_check(0x40, InterruptType::VBlank)? {
             return Ok(());
         }

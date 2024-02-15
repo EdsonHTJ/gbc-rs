@@ -5,12 +5,12 @@ mod interrupts;
 mod processors;
 mod stack;
 
-use std::sync::Arc;
-use crate::bus::{BusError, BUS, BusMutex};
+use crate::bus::{BusError, BusMutex};
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
-use crate::emu::FnCycle;
-use crate::instructions::{AddrMode, Instruction, RegType};
+use crate::instructions::{Instruction, RegType};
+use crate::log::{Logger, LoggerTrait};
+use crate::tick::TickManager;
 
 pub struct CpuRegisters {
     pub a: u8,
@@ -24,7 +24,6 @@ pub struct CpuRegisters {
     pub pc: u16,
     pub sp: u16,
 }
-
 pub struct CPU {
     pub registers: CpuRegisters,
     pub fetch_data: u16,
@@ -37,12 +36,14 @@ pub struct CPU {
     pub enable_ime: bool,
     pub int_flags: u8,
     pub ie_register: u8,
+    pub stopped: bool,
     pub bus: BusMutex,
-    pub fn_cycles: Option<FnCycle>,
+    pub tm: TickManager,
+    pub previous_pc: u16,
 }
 
 impl CPU {
-    pub fn new(bus: BusMutex) -> CPU {
+    pub fn new(bus: BusMutex, tm: TickManager) -> CPU {
         CPU {
             registers: CpuRegisters {
                 a: 0x01,
@@ -64,21 +65,17 @@ impl CPU {
             dest_is_mem: false,
             current_instruction: Instruction::new(),
             enable_ime: false,
+            stopped: false,
             int_flags: 0,
             ie_register: 0,
-            fn_cycles: None,
+            previous_pc: ROM_HEADER_START as u16,
+            tm,
             bus,
         }
     }
 
-    pub fn set_fn_cycles(&mut self, fn_cycles: FnCycle) {
-        self.fn_cycles = Some(fn_cycles);
-    }
-
     pub fn cycle(&mut self, cycles: u32) {
-        if let Some(ref mut fn_cycles) = self.fn_cycles {
-            fn_cycles(cycles);
-        }
+        self.tm.cycle(cycles);
     }
 
     pub fn read_register(&self, reg_type: Option<RegType>) -> Result<u16, CpuError> {
@@ -181,6 +178,7 @@ impl CPU {
         self.read_register(self.current_instruction.reg_2)
     }
 
+    #[allow(dead_code)]
     pub fn write_register_r2(&mut self, value: u16) -> Result<(), CpuError> {
         self.write_register(self.current_instruction.reg_2, value)
     }
@@ -253,4 +251,35 @@ impl CPU {
     ) -> Result<(), BusError> {
         return self.bus.write(0xFFFF, value);
     }
+
+
+    pub fn step_cpu(&mut self) -> Result<(), CpuError> {
+        if !self.halted {
+            self.fetch_instruction()?;
+            Logger::log_cpu_state_with_instruction(&self);
+            self.fetch_data()?;
+            self.execute()?;
+        } else {
+            self.tm.cycle(1);
+            if self.int_flags != 0 {
+                self.halted = false;
+            }
+        }
+
+        if self
+            .get_interruption_master_enable()?
+            != 0
+        {
+            self.enable_ime = false;
+            self.handler_interrupts()?
+        }
+
+        if self.enable_ime {
+            self.set_interruption_master_enable(1)?
+        }
+
+        self.tm.increment_ticks()?;
+        Ok(())
+    }
+
 }

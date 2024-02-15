@@ -2,10 +2,10 @@ pub mod cb;
 mod r#macro;
 
 use crate::instructions::r#macro::create_instructions;
-use sdl2::mouse::SystemCursor::No;
 
 // Addressing modes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum AddrMode {
     AmImp = 0,
     AmRD16,
@@ -32,6 +32,7 @@ pub enum AddrMode {
 
 // Register types
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[allow(dead_code)]
 pub enum RegType {
     RtA = 0,
     RtF,
@@ -74,6 +75,7 @@ impl RegType {
 
 // Instruction types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum InType {
     InNop = 0,
     InLd,

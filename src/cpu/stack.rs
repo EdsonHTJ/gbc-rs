@@ -1,4 +1,3 @@
-use crate::bus::BUS;
 use crate::cpu::error::CpuError;
 use crate::cpu::CPU;
 

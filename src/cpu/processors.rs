@@ -1,4 +1,3 @@
-use crate::bus::BUS;
 use crate::cpu::error::CpuError;
 use crate::cpu::flags::FlagMode;
 use crate::cpu::CPU;
@@ -244,16 +243,16 @@ impl CPU {
         }
 
         if self.current_instruction.reg_1 == Some(RegType::RtSp) {
-            val = (self
+            val = self
                 .read_register_r1()?
-                .wrapping_add_signed(i16::from_be_bytes(self.fetch_data.to_be_bytes())));
+                .wrapping_add_signed(i16::from_be_bytes(self.fetch_data.to_be_bytes()));
         }
 
         let z = val & 0xff == 0;
         let h = (self.read_register_r1()? & 0xf).wrapping_add(self.fetch_data & 0xf) > 0xf;
-        let c = ((self.read_register_r1()? & 0xFF)
+        let c = (self.read_register_r1()? & 0xFF)
             .wrapping_add_signed(i16::from_be_bytes((self.fetch_data & 0xFF).to_be_bytes()))
-            > 0xFF);
+            > 0xFF;
 
         let mut z = FlagMode::from(z);
         let mut h = FlagMode::from(h);
@@ -261,7 +260,7 @@ impl CPU {
 
         if is_16_bit {
             z = FlagMode::None;
-            let val_h = (self.read_register_r1()? & 0xFFF + self.fetch_data & 0xFFF >= 0x1000);
+            let val_h = self.read_register_r1()? & 0xFFF + self.fetch_data & 0xFFF >= 0x1000;
             h = FlagMode::from(val_h);
 
             let n = self.read_register_r1()? as u32 + self.fetch_data as u32;
