@@ -1952,7 +1952,7 @@ macro_rules! create_instructions {
         });
         instructions[0xFA] = Some(Instruction {
             type_: InType::InLd,
-            mode: AddrMode::AmA16R,
+            mode: AddrMode::AmRA16,
             reg_1: Some(RegType::RtA),
             reg_2: None,
             cond: None,
@@ -2003,3 +2003,4 @@ macro_rules! create_instructions {
 }
 
 pub(crate) use create_instructions;
+use crate::instructions::AddrMode;

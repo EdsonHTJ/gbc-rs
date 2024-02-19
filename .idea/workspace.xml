@@ -8,23 +8,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/io/mod.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/debug/formatter.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/debug/log.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/debug/trace.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/io/io_regions.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/io/serial.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bus/addresses.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/addresses.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bus/writers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/writers.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cartridge/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cartridge/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/error.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/fetch.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/fetch.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/interrupts.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/interrupts.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/processors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/processors.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/stack.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/stack.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/emu/tick.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tick/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/instructions/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/instructions/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/log/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/log/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/instructions/macro.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/instructions/macro.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/io/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/io/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/log/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/debug/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/tick/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tick/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,7 +54,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Cargo.Run gbc-rs.executor": "Run",
+    "Cargo.Run gbc-rs.executor": "Debug",
     "Cargo.Run.executor": "Run",
     "Cargo.Test cartridge::tests::test_cartridge.executor": "Run",
     "Cargo.Test cartridge::tests::test_validate_checksum.executor": "Run",
@@ -78,6 +78,7 @@
       <recent name="$PROJECT_DIR$/games" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/debug" />
       <recent name="$PROJECT_DIR$/src/tick" />
       <recent name="$PROJECT_DIR$/src" />
     </key>
@@ -127,7 +128,9 @@
       <workItem from="1707614791165" duration="7894000" />
       <workItem from="1707659790099" duration="22630000" />
       <workItem from="1707865588274" duration="15637000" />
-      <workItem from="1707931996899" duration="10850000" />
+      <workItem from="1707931996899" duration="12869000" />
+      <workItem from="1708269752973" duration="1755000" />
+      <workItem from="1708271548848" duration="16714000" />
     </task>
     <servers />
   </component>
@@ -138,9 +141,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/emu/mod.rs</url>
-          <line>87</line>
-          <option name="timeStamp" value="34" />
+          <url>file://$PROJECT_DIR$/src/cpu/processors.rs</url>
+          <line>307</line>
+          <option name="timeStamp" value="75" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

@@ -5,11 +5,12 @@ mod interrupts;
 mod processors;
 mod stack;
 
+
 use crate::bus::{BusError, BusMutex};
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
+use crate::debug::{formatter, trace};
 use crate::instructions::{Instruction, RegType};
-use crate::log::{Logger, LoggerTrait};
 use crate::tick::TickManager;
 
 pub struct CpuRegisters {
@@ -256,8 +257,11 @@ impl CPU {
     pub fn step_cpu(&mut self) -> Result<(), CpuError> {
         if !self.halted {
             self.fetch_instruction()?;
-            Logger::log_cpu_state_with_instruction(&self);
+            self.cycle(1);
             self.fetch_data()?;
+            //Logger::log_cpu_state_with_instruction(&self);
+            let log = formatter::format_cpu_state(&self);
+            trace::Trace::log_static(log);
             self.execute()?;
         } else {
             self.tm.cycle(1);
@@ -278,7 +282,6 @@ impl CPU {
             self.set_interruption_master_enable(1)?
         }
 
-        self.tm.increment_ticks()?;
         Ok(())
     }
 

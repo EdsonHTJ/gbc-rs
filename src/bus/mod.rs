@@ -154,20 +154,24 @@ impl BUS {
 
     fn read_from_ram(&self, address: u16) -> Result<u8, BusError> {
         let region = AddrSpace::from_address(&address)?;
-        let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::RAM0 | AddrSpace::RAM1 => Ok(self.ram.read_wram(address)?),
-            AddrSpace::ZP => Ok(self.ram.read_hram(address)?),
+            AddrSpace::RAM0 | AddrSpace::RAM1 =>  {
+                let (start, _) = AddrSpace::RAM0.get_region();
+                Ok(self.ram.read_wram(address - start)?)
+            },
+            AddrSpace::ZP => Ok(self.ram.read_hram(AddrSpace::get_region_offset(address)?)?),
             _ => Err(BusError::InvalidAddress),
         }
     }
 
     fn write_to_ram(&mut self, address: u16, data: u8) -> Result<(), BusError> {
         let region = AddrSpace::from_address(&address)?;
-        let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::RAM0 | AddrSpace::RAM1 => self.ram.write_wram(address, data)?,
-            AddrSpace::ZP => self.ram.write_hram(address, data)?,
+            AddrSpace::RAM0 | AddrSpace::RAM1 =>  {
+                let (start, _ ) = AddrSpace::RAM0.get_region();
+                self.ram.write_wram(address - start, data)?
+            },
+            AddrSpace::ZP => self.ram.write_hram(AddrSpace::get_region_offset(address)?, data)?,
             _ => return Err(BusError::InvalidAddress),
         }
 
@@ -186,16 +190,16 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::IO => Ok(self.io.read(address)?),
+            AddrSpace::IO => Ok(self.io.read((address & 0xFF) as u8)?),
             _ => Err(BusError::InvalidAddress),
         }
     }
 
-    fn write_to_io(&self, address: u16, data: u8) -> Result<(), BusError> {
+    fn write_to_io(&mut self, address: u16, data: u8) -> Result<(), BusError> {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::IO => self.io.write(address, data)?,
+            AddrSpace::IO => self.io.write((address &0xFF) as u8, data)?,
             _ => return Err(BusError::InvalidAddress),
         }
 

@@ -19,6 +19,11 @@ impl TickManager {
 
     pub fn cycle(&self, _cycles: u32) {
         //self.ticks += 1;
+        let n = _cycles * 4;
+        let mut ticks = self.ticks.lock().unwrap();
+        for _ in 0..n {
+            *ticks += 1;
+        }
     }
 
     fn get_ticks_ref(&self) -> Result<MutexGuard<u64>, TickError> {

@@ -1,29 +1,34 @@
 use crate::cpu::CPU;
+use crate::debug::formatter;
 use crate::instructions::{Instruction};
 
 pub trait LoggerTrait {
-    fn log(message: &str);
+    fn log(message: String);
     fn log_cpu(cpu: &CPU);
     fn log_instruction(instruction: &Instruction);
     fn log_cpu_state_with_instruction(cpu: &CPU);
+
+    fn put_serial_char(c: char);
 }
 
 pub struct Logger {}
 
 #[cfg(not(feature = "log"))]
 impl LoggerTrait for Logger {
-    fn log(_message: &str) {}
+    fn log(_message: String) {}
 
     fn log_cpu(_cpu: &CPU) {}
 
     fn log_instruction(_instruction: &Instruction) {}
 
     fn log_cpu_state_with_instruction(cpu: &CPU) {}
+
+    fn put_serial_char(c: char) {}
 }
 
 #[cfg(feature = "log")]
 impl LoggerTrait for Logger {
-    fn log(message: &str) {
+    fn log(message: String) {
         print!("{}", message);
     }
 
@@ -41,12 +46,13 @@ impl LoggerTrait for Logger {
     }
 
     fn log_cpu_state_with_instruction(cpu: &CPU) {
-        //Print
-        // PC: Instruction, AddressMode, Reg1, Reg2 A: B: C: D: E: H: L: F: SP:
-        // Make it use the same space
+        let to_print = formatter::format_cpu_state(cpu);
+        println!("{}", to_print);
+    }
 
-        println!("TICKS: {:08X} PC: {:04X}: OP:{:02X} {:?} Reg1: {:?} Reg2: {:?} A: {:02X} B: {:02X} C: {:02X} D: {:02X} E: {:02X} H: {:02X} L: {:02X} F: {:02X} SP: {:04X} Z: {} N: {} H: {} C: {}",
-                 cpu.tm.get_ticks().unwrap(),cpu.registers.pc, cpu.current_opcode,cpu.current_instruction.type_, cpu.current_instruction.reg_1, cpu.current_instruction.reg_2,
-                 cpu.registers.a, cpu.registers.b, cpu.registers.c, cpu.registers.d, cpu.registers.e, cpu.registers.h, cpu.registers.l, cpu.registers.f, cpu.registers.sp, cpu.get_z_flag() as u8, cpu.get_n_flag() as u8, cpu.get_h_flag() as u8, cpu.get_c_flag() as u8);
+
+
+    fn put_serial_char(c: char) {
+        print!("{}", c);
     }
 }

@@ -28,13 +28,15 @@ impl CPU {
     fn process_ld(&mut self) -> Result<u32, CpuError> {
         let mut cycles = 0;
         if self.dest_is_mem {
-            if RegType::is_some_16_bit(self.current_instruction.reg_1) {
+            if RegType::is_some_16_bit(self.current_instruction.reg_2) {
                 cycles += 1;
                 self.cycle(1);
                 self.bus.write_16(self.mem_dest, self.fetch_data)?;
             } else {
                 self.bus.write(self.mem_dest, self.fetch_data as u8)?;
             }
+            cycles += 1;
+            self.cycle(1);
 
             return Ok(cycles);
         }
@@ -83,7 +85,7 @@ impl CPU {
                 self.bus.read(0xFF00 | self.fetch_data)? as u16,
             )?;
         } else {
-            self.bus.write(0xFF00 | self.fetch_data, self.registers.a)?;
+            self.bus.write(0xFF00 | self.mem_dest, self.registers.a)?;
         }
 
         self.cycle(1);
@@ -107,11 +109,12 @@ impl CPU {
         let data = self.read_register_r1()?;
         let data_hi = (data >> 8) as u8;
         let data_lo = (data & 0xFF) as u8;
+        self.cycle(1);
         self.stack_push(data_hi)?;
         self.cycle(1);
         self.stack_push(data_lo)?;
         self.cycle(1);
-        Ok(2)
+        Ok(3)
     }
 
     fn goto_addr(&mut self, addr: u16, push_pc: bool) -> Result<u32, CpuError> {
@@ -156,6 +159,8 @@ impl CPU {
         self.cycle(2);
         cycles += 2;
         self.registers.pc = addr;
+        self.cycle(1);
+        cycles += 1;
         Ok(cycles)
     }
 
@@ -202,7 +207,7 @@ impl CPU {
 
     fn process_dec(&mut self) -> Result<u32, CpuError> {
         let mut cycles = 0;
-        let mut value = self.read_register_r1()? - 1;
+        let mut value = self.read_register_r1()?.wrapping_add_signed(-1);
         if RegType::is_some_16_bit(self.current_instruction.reg_1) {
             cycles += 1;
             self.cycle(1);
@@ -289,23 +294,26 @@ impl CPU {
         let c = self.get_c_flag() as u16;
 
         let result = a + u + c;
-        let z = FlagMode::from(result == 0);
+        self.registers.a = result as u8;
+        let z = FlagMode::from(self.registers.a == 0);
         let h = FlagMode::from((a & 0xF) + (u & 0xF) + c > 0xF);
         let c = FlagMode::from(result > 0xFF);
 
-        self.registers.a = result as u8;
         self.cpu_set_flags(z, FlagMode::Clear, h, c);
         Ok(0)
     }
 
     fn process_sub(&mut self) -> Result<u32, CpuError> {
+        if self.tm.get_ticks().unwrap() == 0x001A0E68 {
+            println!("Subtraction");
+        }
         let val = self
             .read_register_r1()?
             .wrapping_add_signed(-i16::from_be_bytes(self.fetch_data.to_be_bytes()));
 
         let z = FlagMode::from(val == 0);
         let h = FlagMode::from((self.read_register_r1()? & 0xF) < (self.fetch_data & 0xF));
-        let c = FlagMode::from(val > self.read_register_r1()?);
+        let c = FlagMode::from(self.fetch_data > self.read_register_r1()?);
 
         self.write_register_r1(val)?;
         self.cpu_set_flags(z, FlagMode::Set, h, c);

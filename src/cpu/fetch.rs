@@ -16,10 +16,6 @@ impl CPU {
         self.mem_dest = 0;
         self.dest_is_mem = false;
 
-        if self.current_opcode == 0xFA {
-            println!("Fetching data for opcode 0xFA");
-        }
-
         return match self.current_instruction.mode {
             AddrMode::AmImp => Ok(0),
             AddrMode::AmR => {
