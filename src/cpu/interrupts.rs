@@ -46,6 +46,29 @@ impl InterruptType {
     }
 }
 
+#[derive(PartialEq)]
+pub struct IFlagsRegister {
+    pub int_flags: u8,
+}
+
+impl IFlagsRegister {
+    pub fn new() -> IFlagsRegister {
+        IFlagsRegister { int_flags: 0 }
+    }
+
+    pub fn has_interrupt(&self, interrupt_type: InterruptType) -> bool {
+        interrupt_type.value_has_interrupt(self.int_flags as u32)
+    }
+
+    pub fn add_interrupt(&mut self, interrupt_type: InterruptType) {
+        self.int_flags = interrupt_type.value_add_interrupt(self.int_flags as u32) as u8;
+    }
+
+    pub fn remove_interrupt(&mut self, interrupt_type: InterruptType) {
+        self.int_flags = interrupt_type.value_remove_interrupt(self.int_flags as u32) as u8;
+    }
+}
+
 impl CPU {
     pub fn interrupt_handler(&mut self, addr: u16) -> Result<(), CpuError> {
         self.stack_push_16(self.registers.pc)?;
@@ -59,11 +82,14 @@ impl CPU {
         addr: u16,
         interrupt_type: InterruptType,
     ) -> Result<bool, CpuError> {
-        if interrupt_type.value_has_interrupt(self.int_flags as u32)
+        let int_flags = self.int_flags.lock().unwrap().int_flags;
+        if interrupt_type.value_has_interrupt(int_flags as u32)
             && interrupt_type.value_has_interrupt(self.ie_register as u32)
         {
             self.interrupt_handler(addr)?;
-            self.int_flags = interrupt_type.value_remove_interrupt(self.int_flags as u32) as u8;
+            {
+                self.int_flags.lock().unwrap().remove_interrupt(interrupt_type);
+            }
             self.halted = false;
             self.set_interruption_master_enable(0)?;
             return Ok(true);

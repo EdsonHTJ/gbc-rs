@@ -6,13 +6,17 @@ use crate::cpu::{CPU};
 use crate::gfx::color::Color;
 use crate::gfx::Gfx;
 use std::time::Duration;
+use crate::cpu::interrupts::IFlagsRegister;
+use crate::io::IO;
 use crate::tick::TickManager;
+use crate::timer::Timer;
 
 
 pub struct EMU {
     pub paused: bool,
     pub running: bool,
     pub tm: TickManager,
+    pub timer : Arc<Mutex<Timer>>,
     pub bus: BusMutex,
     pub cpu: Arc<Mutex<CPU>>,
     pub gfx: Box<dyn Gfx>,
@@ -21,15 +25,20 @@ pub struct EMU {
 
 impl EMU {
     pub fn default() -> EMU {
-        let bus = BusMutex::new();
-        let tm = TickManager::new();
+        let int_flags = Arc::new(Mutex::new(IFlagsRegister::new()));
+        let timer = Arc::new(Mutex::new(Timer::new(int_flags.clone())));
+        let bus = BusMutex::new(IO::new(timer.clone(), int_flags.clone()));
+        let tm = TickManager::new(timer.clone());
+        let cpu = Arc::new(Mutex::new(CPU::new(bus.clone(), tm.clone(), int_flags.clone())));
+
         let emu = EMU {
             paused: false,
             running: false,
             die: false,
+            timer: timer.clone(),
             tm: tm.clone(),
             bus: bus.clone(),
-            cpu: Arc::new(Mutex::new(CPU::new(bus.clone(), tm.clone()))),
+            cpu,
             gfx: Box::new(crate::gfx::sdl::SDL::new().unwrap()),
         };
 

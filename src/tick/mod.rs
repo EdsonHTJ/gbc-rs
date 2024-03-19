@@ -1,4 +1,6 @@
 use std::sync::{Arc, Mutex, MutexGuard};
+use crate::cpu::CPU;
+use crate::timer::Timer;
 
 #[derive(Debug)]
 pub enum TickError {
@@ -8,21 +10,26 @@ pub enum TickError {
 #[derive(Clone)]
 pub struct TickManager {
     pub ticks: Arc<Mutex<u64>>,
+    pub timer: Arc<Mutex<Timer>>,
 }
 
 impl TickManager {
-    pub fn new() -> TickManager {
+    pub fn new(timer: Arc<Mutex<Timer>>) -> TickManager {
         TickManager {
             ticks: Arc::new(Mutex::new(0)),
+            timer,
         }
     }
 
     pub fn cycle(&self, _cycles: u32) {
         //self.ticks += 1;
         let n = _cycles * 4;
-        let mut ticks = self.ticks.lock().unwrap();
+        let mut ticks = self.get_ticks_ref().unwrap();
         for _ in 0..n {
             *ticks += 1;
+            {
+                self.timer.lock().unwrap().tick();
+            }
         }
     }
 

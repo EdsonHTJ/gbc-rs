@@ -9,6 +9,7 @@ mod util;
 mod tick;
 mod io;
 mod debug;
+mod timer;
 
 fn main() {
     let mut emu = emu::EMU::default();

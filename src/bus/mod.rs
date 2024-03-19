@@ -6,6 +6,7 @@ use crate::bus::addresses::AddrSpace;
 use crate::cartridge::{Cartridge, CartridgeError};
 use crate::io::{IO, IoError};
 use crate::ram::{Ram, RamError};
+use crate::timer::Timer;
 
 #[derive(Debug)]
 pub enum BusError {
@@ -47,9 +48,9 @@ pub struct BusMutex {
 }
 
 impl BusMutex {
-    pub fn new() -> BusMutex {
+    pub fn new(io: IO) -> BusMutex {
         BusMutex {
-            bus: Arc::new(Mutex::new(BUS::new())),
+            bus: Arc::new(Mutex::new(BUS::new(io))),
         }
     }
 
@@ -88,11 +89,11 @@ pub struct BUS {
 }
 
 impl BUS {
-    pub fn new() -> BUS {
+    pub fn new(io: IO) -> BUS {
         BUS {
             cartridge: None,
             ram: Ram::new(),
-            io: IO::new(),
+            io,
             interrupt_register: 0,
         }
     }

@@ -1,17 +1,21 @@
 mod error;
 mod fetch;
 mod flags;
-mod interrupts;
+pub mod interrupts;
 mod processors;
 mod stack;
 
 
+use std::sync::{Arc, Mutex};
+use sdl2::libc::time;
 use crate::bus::{BusError, BusMutex};
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
+use crate::cpu::interrupts::IFlagsRegister;
 use crate::debug::{formatter, trace};
 use crate::instructions::{Instruction, RegType};
 use crate::tick::TickManager;
+use crate::timer::Timer;
 
 pub struct CpuRegisters {
     pub a: u8,
@@ -35,7 +39,7 @@ pub struct CPU {
     pub dest_is_mem: bool,
     pub current_instruction: Instruction,
     pub enable_ime: bool,
-    pub int_flags: u8,
+    pub int_flags: Arc<Mutex<IFlagsRegister>>,
     pub ie_register: u8,
     pub stopped: bool,
     pub bus: BusMutex,
@@ -44,7 +48,7 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(bus: BusMutex, tm: TickManager) -> CPU {
+    pub fn new(bus: BusMutex, tm: TickManager, int_flags: Arc<Mutex<IFlagsRegister>>) -> CPU {
         CPU {
             registers: CpuRegisters {
                 a: 0x01,
@@ -67,12 +71,18 @@ impl CPU {
             current_instruction: Instruction::new(),
             enable_ime: false,
             stopped: false,
-            int_flags: 0,
+            int_flags,
             ie_register: 0,
             previous_pc: ROM_HEADER_START as u16,
             tm,
             bus,
         }
+    }
+
+    pub fn reset(&mut self) {
+        //Create a new cpu and clone its fields to self
+        let mut new_cpu = CPU::new(self.bus.clone(), self.tm.clone(), self.int_flags.clone());
+        std::mem::swap(self, &mut new_cpu);
     }
 
     pub fn cycle(&mut self, cycles: u32) {
@@ -265,7 +275,7 @@ impl CPU {
             self.execute()?;
         } else {
             self.tm.cycle(1);
-            if self.int_flags != 0 {
+            if self.int_flags.lock().unwrap().int_flags != 0 {
                 self.halted = false;
             }
         }
