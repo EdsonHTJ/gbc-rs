@@ -27,11 +27,11 @@ impl CPU {
     }
 
     pub(crate) fn get_n_flag(&self) -> bool {
-        return util::check_bit(self.registers.f, 5);
+        return util::check_bit(self.registers.f, 6);
     }
 
     pub(crate) fn get_h_flag(&self) -> bool {
-        return util::check_bit(self.registers.f, 6);
+        return util::check_bit(self.registers.f, 5);
     }
 
     fn set_z_flag(&mut self, value: bool) {
@@ -50,7 +50,7 @@ impl CPU {
         self.registers.f = util::modify_bit(self.registers.f, 6, value);
     }
 
-    pub(crate) fn cpu_set_flags(&mut self, z: FlagMode, n: FlagMode, h: FlagMode, c: FlagMode) {
+    pub(crate) fn cpu_set_flags(&mut self, z: FlagMode, h: FlagMode, n: FlagMode, c: FlagMode) {
         match z {
             FlagMode::Set => self.set_z_flag(true),
             FlagMode::Clear => self.set_z_flag(false),

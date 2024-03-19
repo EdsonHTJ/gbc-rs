@@ -93,9 +93,9 @@ impl CPU {
     }
 
     fn process_pop(&mut self) -> Result<u32, CpuError> {
-        let data_lo = self.stack_pop()? as u16;
+        let data_lo = self.stack_pop()? as u16 & 0xFF;
         self.cycle(1);
-        let data_hi = self.stack_pop()? as u16;
+        let data_hi = self.stack_pop()? as u16 & 0xFF;
         self.cycle(1);
         let data = (data_hi << 8) | data_lo;
         self.write_register(self.current_instruction.reg_1, data)?;
@@ -304,12 +304,9 @@ impl CPU {
     }
 
     fn process_sub(&mut self) -> Result<u32, CpuError> {
-        if self.tm.get_ticks().unwrap() == 0x001A0E68 {
-            println!("Subtraction");
-        }
-        let val = self
-            .read_register_r1()?
-            .wrapping_add_signed(-i16::from_be_bytes(self.fetch_data.to_be_bytes()));
+        let r1_value = self.read_register_r1()?;
+        let fetch_value = -i16::from_be_bytes(self.fetch_data.to_be_bytes());
+        let val = r1_value.wrapping_add_signed(fetch_value as i16) as u16;
 
         let z = FlagMode::from(val == 0);
         let h = FlagMode::from((self.read_register_r1()? & 0xF) < (self.fetch_data & 0xF));
@@ -459,6 +456,17 @@ impl CPU {
                     FlagMode::from(util::check_bit(old, 0)),
                 );
             }
+            CbOps::SLA => {
+                let old = reg_value;
+                reg_value = (reg_value >> 1) | (reg_value & 0x80);
+                self.cpu_write_r8(Some(cb_op.reg), reg_value)?;
+                self.cpu_set_flags(
+                    FlagMode::from(reg_value == 0),
+                    FlagMode::Clear,
+                    FlagMode::Clear,
+                    FlagMode::from(util::check_bit(old, 0)),
+                );
+            }
             CbOps::SRA => {
                 let old = reg_value;
                 reg_value = (reg_value >> 1) | (reg_value & 0x80);
@@ -562,12 +570,11 @@ impl CPU {
     fn process_dda(&mut self) -> Result<u32, CpuError> {
         let mut u = 0;
         let mut fc = false;
-
-        if self.get_h_flag() || (!self.get_n_flag() && (self.registers.a & 0xF) > 9) {
+        if self.get_h_flag() || (!self.get_n_flag() && ((self.registers.a & 0xF) > 9)) {
             u = 0x06;
         }
 
-        if self.get_c_flag() || (!self.get_n_flag() && self.registers.a > 0x99) {
+        if self.get_c_flag() || ((!self.get_n_flag() && self.registers.a > 0x99)) {
             u |= 0x60;
             fc = true;
         }

@@ -35,6 +35,7 @@ impl TickManager {
         Ok(ticks)
     }
 
+    #[allow(dead_code)]
     pub fn increment_ticks(&self) -> Result<(), TickError>{
         let mut ticks = self.get_ticks_ref()?;
         *ticks += 1;

@@ -2003,4 +2003,3 @@ macro_rules! create_instructions {
 }
 
 pub(crate) use create_instructions;
-use crate::instructions::AddrMode;

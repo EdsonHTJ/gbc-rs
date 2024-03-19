@@ -79,6 +79,6 @@ impl Trace {
 
     pub fn print_last_static(n: usize) {
         let trace = TRACE.lock().unwrap();
-        trace.print_range(183980, 1000);
+        trace.print_last(n);
     }
 }

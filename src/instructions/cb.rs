@@ -11,6 +11,7 @@ pub enum CbOps {
     RRC,
     RL,
     RR,
+    SLA,
     SRA,
     SWAP,
     SRL,
@@ -34,10 +35,11 @@ impl CbOperation {
 
         let bit = (byte >> 3) & 0x7;
         let bit_ops = match bit {
-            1 => Some(CbOps::RLC),
-            2 => Some(CbOps::RRC),
-            3 => Some(CbOps::RL),
-            4 => Some(CbOps::RR),
+            0 => Some(CbOps::RLC),
+            1 => Some(CbOps::RRC),
+            2 => Some(CbOps::RL),
+            3 => Some(CbOps::RR),
+            4 => Some(CbOps::SLA),
             5 => Some(CbOps::SRA),
             6 => Some(CbOps::SWAP),
             7 => Some(CbOps::SRL),
