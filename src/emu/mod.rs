@@ -47,10 +47,10 @@ impl GlobalContext {
         };
 
         let io = Arc::new(Mutex::new(IO::new(ctx.clone())));
-        let bus = BusMutex::new(io.clone(), ctx.ie_register.clone());
-
-        ctx.bus = Some(bus.clone());
         ctx.io = Some(io.clone());
+
+        let bus = BusMutex::new(ctx.clone());
+        ctx.bus = Some(bus.clone());
 
         ctx
     }

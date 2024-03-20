@@ -10,9 +10,7 @@
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/io/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/io/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,7 +40,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Cargo.Run gbc-rs.executor": "Debug",
+    "Cargo.Run gbc-rs.executor": "Run",
     "Cargo.Run.executor": "Run",
     "Cargo.Test cartridge::tests::test_cartridge.executor": "Run",
     "Cargo.Test cartridge::tests::test_validate_checksum.executor": "Run",
@@ -123,7 +121,7 @@
       <workItem from="1708521541805" duration="70000" />
       <workItem from="1710805621094" duration="27488000" />
       <workItem from="1710896720461" duration="1283000" />
-      <workItem from="1710898217947" duration="2992000" />
+      <workItem from="1710898217947" duration="3539000" />
     </task>
     <servers />
   </component>

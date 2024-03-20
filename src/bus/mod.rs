@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use crate::bus::addresses::AddrSpace;
 use crate::cartridge::{Cartridge, CartridgeError};
 use crate::cpu::interrupts::IFlagsRegister;
+use crate::emu::GlobalContext;
 use crate::io::{IO, IoError};
 use crate::ram::{Ram, RamError};
 
@@ -48,9 +49,9 @@ pub struct BusMutex {
 }
 
 impl BusMutex {
-    pub fn new(io: Arc<Mutex<IO>>, ie_register: Arc<Mutex<IFlagsRegister>>) -> BusMutex {
+    pub fn new(global_context: GlobalContext) -> BusMutex {
         BusMutex {
-            bus: Arc::new(Mutex::new(BUS::new(io, ie_register))),
+            bus: Arc::new(Mutex::new(BUS::new(global_context))),
         }
     }
 
@@ -89,12 +90,12 @@ pub struct BUS {
 }
 
 impl BUS {
-    pub fn new(io: Arc<Mutex<IO>>, ie_register: Arc<Mutex<IFlagsRegister>>) -> BUS {
+    pub fn new(global_context: GlobalContext) -> BUS {
         BUS {
             cartridge: None,
             ram: Ram::new(),
-            io,
-            interrupt_register: ie_register,
+            io: global_context.io.unwrap(),
+            interrupt_register: global_context.ie_register,
         }
     }
 
