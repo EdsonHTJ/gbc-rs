@@ -48,7 +48,7 @@ pub struct BusMutex {
 }
 
 impl BusMutex {
-    pub fn new(io: IO, ie_register: Arc<Mutex<IFlagsRegister>>) -> BusMutex {
+    pub fn new(io: Arc<Mutex<IO>>, ie_register: Arc<Mutex<IFlagsRegister>>) -> BusMutex {
         BusMutex {
             bus: Arc::new(Mutex::new(BUS::new(io, ie_register))),
         }
@@ -84,12 +84,12 @@ impl BusMutex {
 pub struct BUS {
     cartridge: Option<Cartridge>,
     ram: Ram,
-    io: IO,
+    io: Arc<Mutex<IO>>,
     interrupt_register: Arc<Mutex<IFlagsRegister>>,
 }
 
 impl BUS {
-    pub fn new(io: IO, ie_register: Arc<Mutex<IFlagsRegister>>) -> BUS {
+    pub fn new(io: Arc<Mutex<IO>>, ie_register: Arc<Mutex<IFlagsRegister>>) -> BUS {
         BUS {
             cartridge: None,
             ram: Ram::new(),
@@ -191,7 +191,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::IO => Ok(self.io.read((address & 0xFF) as u8)?),
+            AddrSpace::IO => Ok(self.io.lock().unwrap().read((address & 0xFF) as u8)?),
             _ => Err(BusError::InvalidAddress),
         }
     }
@@ -200,7 +200,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::IO => self.io.write((address &0xFF) as u8, data)?,
+            AddrSpace::IO => self.io.lock().unwrap().write((address &0xFF) as u8, data)?,
             _ => return Err(BusError::InvalidAddress),
         }
 

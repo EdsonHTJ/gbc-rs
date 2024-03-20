@@ -16,29 +16,57 @@ pub struct EMU {
     pub paused: bool,
     pub running: bool,
     pub tm: TickManager,
-    pub timer : Arc<Mutex<Timer>>,
     pub bus: BusMutex,
     pub cpu: Arc<Mutex<CPU>>,
     pub gfx: Box<dyn Gfx>,
     pub die: bool,
 }
 
-impl EMU {
-    pub fn default() -> EMU {
+#[derive(Clone)]
+pub struct GlobalContext {
+    pub int_flags: Arc<Mutex<IFlagsRegister>>,
+    pub ie_register: Arc<Mutex<IFlagsRegister>>,
+    pub tick_manager: TickManager,
+    pub io: Option<Arc<Mutex<IO>>>,
+    pub bus: Option<BusMutex>,
+}
+
+impl GlobalContext {
+    pub fn new() -> GlobalContext {
         let int_flags = Arc::new(Mutex::new(IFlagsRegister::new()));
         let ie_register = Arc::new(Mutex::new(IFlagsRegister::new()));
         let timer = Arc::new(Mutex::new(Timer::new(int_flags.clone())));
-        let bus = BusMutex::new(IO::new(timer.clone(), int_flags.clone()), ie_register.clone());
-        let tm = TickManager::new(timer.clone());
-        let cpu = Arc::new(Mutex::new(CPU::new(bus.clone(), tm.clone(), int_flags.clone(),ie_register.clone())));
+        let tick_manager = TickManager::new(timer.clone());
+
+        let mut ctx = GlobalContext {
+            int_flags,
+            ie_register,
+            tick_manager,
+            io: None,
+            bus: None,
+        };
+
+        let io = Arc::new(Mutex::new(IO::new(ctx.clone())));
+        let bus = BusMutex::new(io.clone(), ctx.ie_register.clone());
+
+        ctx.bus = Some(bus.clone());
+        ctx.io = Some(io.clone());
+
+        ctx
+    }
+}
+
+impl EMU {
+    pub fn default() -> EMU {
+        let ctx = GlobalContext::new();
+        let cpu = Arc::new(Mutex::new(CPU::new(ctx.clone())));
 
         let emu = EMU {
             paused: false,
             running: false,
             die: false,
-            timer: timer.clone(),
-            tm: tm.clone(),
-            bus: bus.clone(),
+            tm: ctx.tick_manager.clone(),
+            bus: ctx.bus.unwrap(),
             cpu,
             gfx: Box::new(crate::gfx::sdl::SDL::new().unwrap()),
         };

@@ -7,11 +7,12 @@ mod stack;
 
 
 use std::sync::{Arc, Mutex};
-use crate::bus::{BusError, BusMutex};
+use crate::bus::{BusMutex};
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
 use crate::cpu::interrupts::IFlagsRegister;
 use crate::debug::{formatter, trace};
+use crate::emu::GlobalContext;
 use crate::instructions::{Instruction, RegType};
 use crate::tick::TickManager;
 
@@ -27,6 +28,24 @@ pub struct CpuRegisters {
     pub pc: u16,
     pub sp: u16,
 }
+
+impl CpuRegisters {
+    pub fn new() -> Self {
+        CpuRegisters {
+            a: 0x01,
+            f: 0xB0,
+            b: 0,
+            c: 0x13,
+            d: 0,
+            e: 0xD8,
+            h: 0x01,
+            l: 0x4d,
+            pc: ROM_HEADER_START as u16,
+            sp: 0xFFFE,
+        }
+    }
+}
+
 pub struct CPU {
     pub registers: CpuRegisters,
     pub fetch_data: u16,
@@ -47,20 +66,9 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(bus: BusMutex, tm: TickManager, int_flags: Arc<Mutex<IFlagsRegister>>, ie_register: Arc<Mutex<IFlagsRegister>>) -> CPU {
+    pub fn new(global: GlobalContext) -> CPU {
         CPU {
-            registers: CpuRegisters {
-                a: 0x01,
-                f: 0xB0,
-                b: 0,
-                c: 0x13,
-                d: 0,
-                e: 0xD8,
-                h: 0x01,
-                l: 0x4d,
-                pc: ROM_HEADER_START as u16,
-                sp: 0xFFFE,
-            },
+            registers: CpuRegisters::new(),
             fetch_data: 0,
             mem_dest: 0,
             current_opcode: 0,
@@ -70,20 +78,30 @@ impl CPU {
             current_instruction: Instruction::new(),
             enable_ime: false,
             stopped: false,
-            int_flags,
-            ie_register,
+            int_flags: global.int_flags.clone(),
+            ie_register: global.ie_register.clone(),
             interrupt_master_enable: false,
             previous_pc: ROM_HEADER_START as u16,
-            tm,
-            bus,
+            tm: global.tick_manager.clone(),
+            bus: global.bus.unwrap(),
         }
     }
 
     #[allow(dead_code)]
     pub fn reset(&mut self) {
         //Create a new cpu and clone its fields to self
-        let mut new_cpu = CPU::new(self.bus.clone(), self.tm.clone(), self.int_flags.clone(), self.ie_register.clone());
-        std::mem::swap(self, &mut new_cpu);
+        self.registers = CpuRegisters::new();
+        self.fetch_data = 0;
+        self.mem_dest = 0;
+        self.current_opcode = 0;
+        self.halted = false;
+        self.stepping = false;
+        self.dest_is_mem = false;
+        self.current_instruction = Instruction::new();
+        self.enable_ime = false;
+        self.stopped = false;
+        self.interrupt_master_enable = false;
+        self.previous_pc = ROM_HEADER_START as u16;
     }
 
     pub fn cycle(&mut self, cycles: u32) {

@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 use crate::cpu::interrupts::IFlagsRegister;
+use crate::emu::GlobalContext;
 use crate::io::io_regions::IoRegions;
 use crate::timer::Timer;
 
@@ -21,13 +22,13 @@ pub struct IO {
 }
 
 impl IO {
-    pub fn new(timer: Arc<Mutex<Timer>>, int_flags: Arc<Mutex<IFlagsRegister>>) -> IO {
+    pub fn new(global: GlobalContext) -> IO {
         IO {
-            int_flags,
+            int_flags: global.int_flags.clone(),
             serial_data: 0,
             serial_control: 0,
             serial_message: String::new(),
-            timer
+            timer: global.tick_manager.timer.clone(),
         }
     }
 
