@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex};
-use crate::cpu::CPU;
 use crate::cpu::interrupts::{IFlagsRegister, InterruptType};
 
 pub struct Timer {
@@ -21,6 +20,7 @@ impl Timer {
         }
     }
 
+    #[allow(dead_code)]
     pub fn reset(&mut self) {
         let mut new_timer = Timer::new(self.int_flags.clone());
         std::mem::swap(self, &mut new_timer);

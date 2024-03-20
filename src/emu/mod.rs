@@ -26,10 +26,11 @@ pub struct EMU {
 impl EMU {
     pub fn default() -> EMU {
         let int_flags = Arc::new(Mutex::new(IFlagsRegister::new()));
+        let ie_register = Arc::new(Mutex::new(IFlagsRegister::new()));
         let timer = Arc::new(Mutex::new(Timer::new(int_flags.clone())));
-        let bus = BusMutex::new(IO::new(timer.clone(), int_flags.clone()));
+        let bus = BusMutex::new(IO::new(timer.clone(), int_flags.clone()), ie_register.clone());
         let tm = TickManager::new(timer.clone());
-        let cpu = Arc::new(Mutex::new(CPU::new(bus.clone(), tm.clone(), int_flags.clone())));
+        let cpu = Arc::new(Mutex::new(CPU::new(bus.clone(), tm.clone(), int_flags.clone(),ie_register.clone())));
 
         let emu = EMU {
             paused: false,

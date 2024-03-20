@@ -8,17 +8,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/timer/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/flags.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/flags.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/interrupts.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/interrupts.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cpu/processors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/processors.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/io/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/io/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/io/serial.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/io/serial.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/tick/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tick/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/timer/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/timer/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,27 +45,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Cargo.Run gbc-rs.executor&quot;: &quot;Debug&quot;,
-    &quot;Cargo.Run.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test cartridge::tests::test_cartridge.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test cartridge::tests::test_validate_checksum.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/edson/gits/gbc-rs/games&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Cargo.Run gbc-rs.executor": "Debug",
+    "Cargo.Run.executor": "Run",
+    "Cargo.Test cartridge::tests::test_cartridge.executor": "Run",
+    "Cargo.Test cartridge::tests::test_validate_checksum.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "/home/edson/gits/gbc-rs/games",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/games" />
@@ -127,7 +126,9 @@
       <workItem from="1708271548848" duration="17202000" />
       <workItem from="1708347085864" duration="11000" />
       <workItem from="1708521541805" duration="70000" />
-      <workItem from="1710805621094" duration="18023000" />
+      <workItem from="1710805621094" duration="27488000" />
+      <workItem from="1710896720461" duration="1283000" />
+      <workItem from="1710898217947" duration="1672000" />
     </task>
     <servers />
   </component>
@@ -138,24 +139,14 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/cpu/processors.rs</url>
-          <line>572</line>
-          <option name="timeStamp" value="88" />
+          <url>file://$PROJECT_DIR$/src/cpu/interrupts.rs</url>
+          <line>60</line>
+          <option name="timeStamp" value="95" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/cpu/processors.rs</url>
-          <line>230</line>
-          <option name="timeStamp" value="89" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/main.rs</url>
-          <line>14</line>
-          <option name="timeStamp" value="91" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/cpu/mod.rs</url>
-          <line>269</line>
-          <option name="timeStamp" value="93" />
+          <url>file://$PROJECT_DIR$/src/timer/mod.rs</url>
+          <line>62</line>
+          <option name="timeStamp" value="100" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

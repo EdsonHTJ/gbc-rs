@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex};
-use crate::cpu::CPU;
 use crate::cpu::interrupts::IFlagsRegister;
 use crate::io::io_regions::IoRegions;
 use crate::timer::Timer;

@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex, MutexGuard};
-use crate::cpu::CPU;
 use crate::timer::Timer;
 
 #[derive(Debug)]

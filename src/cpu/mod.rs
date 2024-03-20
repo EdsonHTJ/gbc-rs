@@ -7,7 +7,6 @@ mod stack;
 
 
 use std::sync::{Arc, Mutex};
-use sdl2::libc::time;
 use crate::bus::{BusError, BusMutex};
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
@@ -15,7 +14,6 @@ use crate::cpu::interrupts::IFlagsRegister;
 use crate::debug::{formatter, trace};
 use crate::instructions::{Instruction, RegType};
 use crate::tick::TickManager;
-use crate::timer::Timer;
 
 pub struct CpuRegisters {
     pub a: u8,
@@ -40,7 +38,8 @@ pub struct CPU {
     pub current_instruction: Instruction,
     pub enable_ime: bool,
     pub int_flags: Arc<Mutex<IFlagsRegister>>,
-    pub ie_register: u8,
+    pub ie_register: Arc<Mutex<IFlagsRegister>>,
+    pub interrupt_master_enable: bool,
     pub stopped: bool,
     pub bus: BusMutex,
     pub tm: TickManager,
@@ -48,7 +47,7 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(bus: BusMutex, tm: TickManager, int_flags: Arc<Mutex<IFlagsRegister>>) -> CPU {
+    pub fn new(bus: BusMutex, tm: TickManager, int_flags: Arc<Mutex<IFlagsRegister>>, ie_register: Arc<Mutex<IFlagsRegister>>) -> CPU {
         CPU {
             registers: CpuRegisters {
                 a: 0x01,
@@ -72,16 +71,18 @@ impl CPU {
             enable_ime: false,
             stopped: false,
             int_flags,
-            ie_register: 0,
+            ie_register,
+            interrupt_master_enable: false,
             previous_pc: ROM_HEADER_START as u16,
             tm,
             bus,
         }
     }
 
+    #[allow(dead_code)]
     pub fn reset(&mut self) {
         //Create a new cpu and clone its fields to self
-        let mut new_cpu = CPU::new(self.bus.clone(), self.tm.clone(), self.int_flags.clone());
+        let mut new_cpu = CPU::new(self.bus.clone(), self.tm.clone(), self.int_flags.clone(), self.ie_register.clone());
         std::mem::swap(self, &mut new_cpu);
     }
 
@@ -252,18 +253,6 @@ impl CPU {
         return self.process_instruction();
     }
 
-    pub fn get_interruption_master_enable(&mut self) -> Result<u8, BusError> {
-        return self.bus.read(0xFFFF);
-    }
-
-    pub fn set_interruption_master_enable(
-        &mut self,
-        value: u8,
-    ) -> Result<(), BusError> {
-        return self.bus.write(0xFFFF, value);
-    }
-
-
     pub fn step_cpu(&mut self) -> Result<(), CpuError> {
         if !self.halted {
             self.fetch_instruction()?;
@@ -271,7 +260,8 @@ impl CPU {
             self.fetch_data()?;
             //Logger::log_cpu_state_with_instruction(&self);
             let log = formatter::format_cpu_state(&self);
-            trace::Trace::log_static(log);
+            trace::Trace::log_static(log.clone());
+           // println!("{}", log);
             self.execute()?;
         } else {
             self.tm.cycle(1);
@@ -280,16 +270,14 @@ impl CPU {
             }
         }
 
-        if self
-            .get_interruption_master_enable()?
-            != 0
+        if self.interrupt_master_enable
         {
+            self.handler_interrupts()?;
             self.enable_ime = false;
-            self.handler_interrupts()?
         }
 
         if self.enable_ime {
-            self.set_interruption_master_enable(1)?
+            self.interrupt_master_enable = true;
         }
 
         Ok(())

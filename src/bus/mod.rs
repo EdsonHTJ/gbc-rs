@@ -4,9 +4,9 @@ mod writers;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use crate::bus::addresses::AddrSpace;
 use crate::cartridge::{Cartridge, CartridgeError};
+use crate::cpu::interrupts::IFlagsRegister;
 use crate::io::{IO, IoError};
 use crate::ram::{Ram, RamError};
-use crate::timer::Timer;
 
 #[derive(Debug)]
 pub enum BusError {
@@ -48,9 +48,9 @@ pub struct BusMutex {
 }
 
 impl BusMutex {
-    pub fn new(io: IO) -> BusMutex {
+    pub fn new(io: IO, ie_register: Arc<Mutex<IFlagsRegister>>) -> BusMutex {
         BusMutex {
-            bus: Arc::new(Mutex::new(BUS::new(io))),
+            bus: Arc::new(Mutex::new(BUS::new(io, ie_register))),
         }
     }
 
@@ -85,16 +85,16 @@ pub struct BUS {
     cartridge: Option<Cartridge>,
     ram: Ram,
     io: IO,
-    interrupt_register: u8,
+    interrupt_register: Arc<Mutex<IFlagsRegister>>,
 }
 
 impl BUS {
-    pub fn new(io: IO) -> BUS {
+    pub fn new(io: IO, ie_register: Arc<Mutex<IFlagsRegister>>) -> BUS {
         BUS {
             cartridge: None,
             ram: Ram::new(),
             io,
-            interrupt_register: 0,
+            interrupt_register: ie_register,
         }
     }
 
@@ -180,11 +180,11 @@ impl BUS {
     }
 
     fn read_from_master_interruption_register(&self) -> u8 {
-        self.interrupt_register
+        self.interrupt_register.lock().unwrap().int_flags
     }
 
     fn write_to_master_interruption_register(&mut self, data: u8) {
-        self.interrupt_register = data;
+        self.interrupt_register.lock().unwrap().int_flags = data;
     }
 
     fn read_from_io(&self, address: u16) -> Result<u8, BusError> {

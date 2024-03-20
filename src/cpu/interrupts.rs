@@ -28,9 +28,7 @@ impl InterruptType {
             InterruptType::Timer => value | 0x04,
             InterruptType::Serial => value | 0x08,
             InterruptType::JoyPad => value | 0x16,
-        };
-
-        value
+        }
     }
 
     pub fn value_remove_interrupt(&self, value: u32) -> u32 {
@@ -40,9 +38,7 @@ impl InterruptType {
             InterruptType::Timer => value & 0xFB,
             InterruptType::Serial => value & 0xF7,
             InterruptType::JoyPad => value & 0xEF,
-        };
-
-        value
+        }
     }
 }
 
@@ -56,6 +52,7 @@ impl IFlagsRegister {
         IFlagsRegister { int_flags: 0 }
     }
 
+    #[allow(dead_code)]
     pub fn has_interrupt(&self, interrupt_type: InterruptType) -> bool {
         interrupt_type.value_has_interrupt(self.int_flags as u32)
     }
@@ -83,15 +80,13 @@ impl CPU {
         interrupt_type: InterruptType,
     ) -> Result<bool, CpuError> {
         let int_flags = self.int_flags.lock().unwrap().int_flags;
-        if interrupt_type.value_has_interrupt(int_flags as u32)
-            && interrupt_type.value_has_interrupt(self.ie_register as u32)
-        {
+        let ie_flags = self.ie_register.lock().unwrap().int_flags;
+
+        if interrupt_type.value_has_interrupt(int_flags as u32) && interrupt_type.value_has_interrupt(ie_flags as u32) {
             self.interrupt_handler(addr)?;
-            {
-                self.int_flags.lock().unwrap().remove_interrupt(interrupt_type);
-            }
+            self.int_flags.lock().unwrap().remove_interrupt(interrupt_type);
+            self.interrupt_master_enable = false;
             self.halted = false;
-            self.set_interruption_master_enable(0)?;
             return Ok(true);
         }
 

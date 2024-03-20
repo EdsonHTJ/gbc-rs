@@ -54,7 +54,7 @@ impl CPU {
 
             let val_to_write = self
                 .read_register_r2()?
-                .wrapping_add_signed(i16::from_be_bytes(self.fetch_data.to_be_bytes()));
+                .wrapping_add_signed(i8::from_be_bytes((self.fetch_data as u8).to_be_bytes()) as i16);
             self.write_register_r1(val_to_write)?;
 
             return Ok(cycles);
@@ -69,7 +69,7 @@ impl CPU {
     }
 
     fn process_di(&mut self) -> Result<u32, CpuError> {
-        self.bus.write(0xFFFF, 0x00)?; // Disable all interrupts
+        self.interrupt_master_enable = false;
         Ok(0)
     }
 
@@ -165,7 +165,7 @@ impl CPU {
     }
 
     fn process_reti(&mut self) -> Result<u32, CpuError> {
-        self.bus.write(0xFFFF, 0x01)?; // Enable all interrupts
+        self.interrupt_master_enable = true;
         self.process_ret()
     }
 
