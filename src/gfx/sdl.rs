@@ -3,11 +3,11 @@ use crate::gfx::{Gfx, GfxError, UserEvents};
 
 pub struct SDL {
     pub canvas: sdl2::render::Canvas<sdl2::video::Window>,
-    pub event_pump: sdl2::EventPump,
+    pub event_pump: Option<sdl2::EventPump>,
 }
 
 impl SDL {
-    pub fn new() -> Result<SDL, GfxError> {
+    pub fn new(w: u32, h: u32, isDebug: bool) -> Result<SDL, GfxError> {
         let sdl_context = match sdl2::init() {
             Ok(sdl_context) => sdl_context,
             Err(e) => return Err(GfxError::InitError(e.to_string())),
@@ -17,9 +17,14 @@ impl SDL {
             Ok(video_subsystem) => video_subsystem,
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
+        
+        let window_name = match isDebug {
+            true => "gba-rs-debug",
+            false => "gba-rs",
+        };
 
         let window_result = video_subsystem
-            .window("gba-rs", 800, 600)
+            .window(window_name, w, h)
             .position_centered()
             .build();
 
@@ -33,12 +38,15 @@ impl SDL {
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
 
+        if isDebug {
+            return Ok(SDL { canvas, event_pump: None });
+        }
         let event_pump = match sdl_context.event_pump() {
             Ok(event_pump) => event_pump,
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
 
-        Ok(SDL { canvas, event_pump })
+        Ok(SDL { canvas, event_pump: Some(event_pump)})
     }
 }
 impl Gfx for SDL {
@@ -69,7 +77,7 @@ impl Gfx for SDL {
     }
 
     fn get_user_events(&mut self) -> Vec<UserEvents> {
-        self.event_pump
+        self.event_pump.as_mut().unwrap()
             .poll_iter()
             .map(|event| match event {
                 sdl2::event::Event::Quit { .. } => UserEvents::Quit,

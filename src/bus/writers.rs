@@ -69,17 +69,40 @@ impl BusWriter for IoWriter {
     }
 }
 
+pub struct VramWriter{}
+
+impl BusWriter for VramWriter {
+    fn write(&self, bus: &mut BUS, address: u16, data: u8) -> Result<(), BusError> {
+        bus.write_to_vram(address, data)
+    }
+
+    fn read(&self, bus: &mut BUS, address: u16) -> Result<u8, BusError> {
+        bus.read_from_vram(address)
+    }
+}
+
+pub struct OamWriter{}
+
+impl BusWriter for OamWriter {
+    fn write(&self, bus: &mut BUS, address: u16, data: u8) -> Result<(), BusError> {
+        bus.write_to_oam(address, data)
+    }
+
+    fn read(&self, bus: &mut BUS, address: u16) -> Result<u8, BusError> {
+        bus.read_from_oam(address)
+    }
+}
+
 
 pub fn get_writer_by_region(region: AddrSpace) -> Result<WriterPtr, BusError> {
     match region {
         AddrSpace::ROM0 | AddrSpace::ROM1 | AddrSpace::CRAM => Ok(Box::new(CartridgeWriter {})),
         AddrSpace::BG1 | AddrSpace::BG2 => Ok(Box::new(NoneWriter {})),
         AddrSpace::RAM0 | AddrSpace::RAM1 | AddrSpace::ZP => Ok(Box::new(WRamWriter {})),
-        AddrSpace::ECHO => Ok(Box::new(NoneWriter {})),
-        AddrSpace::OAM => Ok(Box::new(NoneWriter {})),
-        AddrSpace::UNUSABLE => Ok(Box::new(NoneWriter {})),
         AddrSpace::IO => Ok(Box::new(IoWriter {})),
         AddrSpace::INTERRUPT => Ok(Box::new(InterruptionWriter {})),
+        AddrSpace::VRAM => Ok(Box::new(VramWriter {})),
+        AddrSpace::OAM => Ok(Box::new(OamWriter {})),
         _ => Ok(Box::new(NoneWriter {})),
     }
 }

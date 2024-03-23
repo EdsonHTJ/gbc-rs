@@ -1,7 +1,7 @@
 /*
     0x0000 - 0x3FFF: 16KB ROM Bank 00 (in cartridge, fixed at bank 00)
     0x4000 - 0x7FFF: 16KB ROM Bank 01..NN (in cartridge, switchable bank number)
-    0x8000 - 0x97FF: CHM RAM
+    0x8000 - 0x97FF: VRAM RAM
     0x9800 - 0x9BFF: BG Map Data 1
     0x9C00 - 0x9FFF: BG Map Data 2
     0xA000 - 0xBFFF: Cartridge RAM
@@ -20,7 +20,7 @@ use crate::bus::BusError;
 pub enum AddrSpace {
     ROM0,
     ROM1,
-    CHM,
+    VRAM,
     BG1,
     BG2,
     CRAM,
@@ -39,7 +39,7 @@ impl AddrSpace {
         match self {
             AddrSpace::ROM0 => (0x0000, 0x3FFF),
             AddrSpace::ROM1 => (0x4000, 0x7FFF),
-            AddrSpace::CHM => (0x8000, 0x97FF),
+            AddrSpace::VRAM => (0x8000, 0x97FF),
             AddrSpace::BG1 => (0x9800, 0x9BFF),
             AddrSpace::BG2 => (0x9C00, 0x9FFF),
             AddrSpace::CRAM => (0xA000, 0xBFFF),
@@ -59,7 +59,7 @@ impl AddrSpace {
         let region = match address {
             0x0000..=0x3FFF => AddrSpace::ROM0,
             0x4000..=0x7FFF => AddrSpace::ROM1,
-            0x8000..=0x97FF => AddrSpace::CHM,
+            0x8000..=0x97FF => AddrSpace::VRAM,
             0x9800..=0x9BFF => AddrSpace::BG1,
             0x9C00..=0x9FFF => AddrSpace::BG2,
             0xA000..=0xBFFF => AddrSpace::CRAM,

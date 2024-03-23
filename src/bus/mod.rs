@@ -7,6 +7,7 @@ use crate::cartridge::{Cartridge, CartridgeError};
 use crate::cpu::interrupts::IFlagsRegister;
 use crate::emu::GlobalContext;
 use crate::io::{IO, IoError};
+use crate::ppu::PPU;
 use crate::ram::{Ram, RamError};
 
 #[derive(Debug)]
@@ -85,6 +86,7 @@ impl BusMutex {
 pub struct BUS {
     cartridge: Option<Cartridge>,
     ram: Ram,
+    ppu: Arc<Mutex<PPU>>,
     io: Arc<Mutex<IO>>,
     interrupt_register: Arc<Mutex<IFlagsRegister>>,
 }
@@ -95,6 +97,7 @@ impl BUS {
             cartridge: None,
             ram: Ram::new(),
             io: global_context.io.unwrap(),
+            ppu: global_context.ppu,
             interrupt_register: global_context.ie_register,
         }
     }
@@ -206,5 +209,45 @@ impl BUS {
         }
 
         Ok(())
+    }
+
+    fn write_to_oam(&mut self, address: u16, data: u8) -> Result<(), BusError> {
+        let region = AddrSpace::from_address(&address)?;
+        let address = AddrSpace::get_region_offset(address)?;
+        match region {
+            AddrSpace::OAM => self.ppu.lock().unwrap().oam_write(address, data),
+            _ => return Err(BusError::InvalidAddress),
+        }
+
+        Ok(())
+    }
+
+    fn read_from_oam(&self, address: u16) -> Result<u8, BusError> {
+        let region = AddrSpace::from_address(&address)?;
+        let address = AddrSpace::get_region_offset(address)?;
+        match region {
+            AddrSpace::OAM => Ok(self.ppu.lock().unwrap().oam_read(address)),
+            _ => return Err(BusError::InvalidAddress),
+        }
+    }
+
+    fn write_to_vram(&mut self, address: u16, data: u8) -> Result<(), BusError> {
+        let region = AddrSpace::from_address(&address)?;
+        let address = AddrSpace::get_region_offset(address)?;
+        match region {
+            AddrSpace::VRAM => self.ppu.lock().unwrap().vram_write(address, data),
+            _ => return Err(BusError::InvalidAddress),
+        }
+
+        Ok(())
+    }
+
+    fn read_from_vram(&self, address: u16) -> Result<u8, BusError> {
+        let region = AddrSpace::from_address(&address)?;
+        let address = AddrSpace::get_region_offset(address)?;
+        match region {
+            AddrSpace::VRAM => Ok(self.ppu.lock().unwrap().vram_read(address)),
+            _ => return Err(BusError::InvalidAddress),
+        }
     }
 }
