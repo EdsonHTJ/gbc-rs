@@ -82,7 +82,7 @@ impl CPU {
             ie_register: global.ie_register.clone(),
             interrupt_master_enable: false,
             previous_pc: ROM_HEADER_START as u16,
-            tm: global.tick_manager.clone(),
+            tm: global.tick_manager.clone().unwrap(),
             bus: global.bus.unwrap(),
         }
     }

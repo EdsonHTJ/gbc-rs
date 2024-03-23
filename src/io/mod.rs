@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 use crate::cpu::interrupts::IFlagsRegister;
+use crate::dma::DMA;
 use crate::emu::GlobalContext;
 use crate::io::io_regions::IoRegions;
 use crate::timer::Timer;
@@ -19,6 +20,8 @@ pub struct IO {
     pub serial_message: String,
     pub timer: Arc<Mutex<Timer>>,
     pub int_flags: Arc<Mutex<IFlagsRegister>>,
+    pub dma: Arc<Mutex<DMA>>,
+    pub ly: u8,
 }
 
 impl IO {
@@ -28,11 +31,13 @@ impl IO {
             serial_data: 0,
             serial_control: 0,
             serial_message: String::new(),
-            timer: global.tick_manager.timer.clone(),
+            timer: global.timer.clone(),
+            dma: global.dma.unwrap(),
+            ly: 0,
         }
     }
 
-    pub fn read(&self, address: u8) -> Result<u8, IoError> {
+    pub fn read(&mut self, address: u8) -> Result<u8, IoError> {
         let io_region = IoRegions::from_u8_address(address)?;
         match io_region {
             IoRegions::SerialTransferData => Ok(self.serial_data),
@@ -45,6 +50,12 @@ impl IO {
             IoRegions::TimerModulo => Ok(self.timer.lock().unwrap().get_tma()),
             IoRegions::TimerControl => Ok(self.timer.lock().unwrap().get_tac()),
             IoRegions::InterruptFlags => Ok(self.int_flags.lock().unwrap().int_flags),
+            IoRegions::LCDYCoordinate => {
+                let ly = self.ly;
+                self.ly %= 255;
+                self.ly += 1;
+                Ok(ly)
+            },
             _ => Ok(0),
         }
 
@@ -80,6 +91,10 @@ impl IO {
             },
             IoRegions::InterruptFlags => {
                 self.int_flags.lock().unwrap().int_flags = data;
+                Ok(())
+            },
+            IoRegions::DMATransfer => {
+                self.dma.lock().unwrap().dma_start(data);
                 Ok(())
             },
 

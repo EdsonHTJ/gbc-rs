@@ -1,14 +1,15 @@
 
 
 
-const BG_WINDOW_MASK: u8 = (1 << 7);
-const Y_FLIP_MASK: u8 = (1 << 6);
-const X_FLIP_MASK: u8 = (1 << 5);
-const PALETTE_NUMBER_MASK: u8 = (1 << 4);
-const TILE_VRAM_BANK_MASK: u8 = (1 << 3);
+const BG_WINDOW_MASK: u8 = 1 << 7;
+const Y_FLIP_MASK: u8 = 1 << 6;
+const X_FLIP_MASK: u8 = 1 << 5;
+const PALETTE_NUMBER_MASK: u8 = 1 << 4;
+const TILE_VRAM_BANK_MASK: u8 = 1 << 3;
 const CGB_PALLETE_NUMBER_MASK: u8 = 0x03;
 
 #[derive(Clone)]
+#[derive(Copy)]
 pub struct OAM {
     pub y: u8,
     pub x: u8,
@@ -54,7 +55,7 @@ impl OAM {
 
 #[derive(Clone)]
 pub struct PPU {
-    oam_ram: Vec<OAM>,
+    oam_ram: [OAM; 40],
     vram: [u8; 0x2000],
 }
 
@@ -62,7 +63,7 @@ impl PPU {
 
     pub fn new() -> PPU {
         PPU {
-            oam_ram: vec![OAM::default(); 40],
+            oam_ram: [OAM::default(); 40],
             vram: [0; 0x2000],
         }
     }

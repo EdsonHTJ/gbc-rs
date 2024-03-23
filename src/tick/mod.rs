@@ -1,4 +1,7 @@
 use std::sync::{Arc, Mutex, MutexGuard};
+use crate::dma::DMA;
+use crate::emu::GlobalContext;
+use crate::ppu::PPU;
 use crate::timer::Timer;
 
 #[derive(Debug)]
@@ -10,25 +13,32 @@ pub enum TickError {
 pub struct TickManager {
     pub ticks: Arc<Mutex<u64>>,
     pub timer: Arc<Mutex<Timer>>,
+    pub dma : Arc<Mutex<DMA>>,
+    pub ppu: Arc<Mutex<PPU>>,
 }
 
 impl TickManager {
-    pub fn new(timer: Arc<Mutex<Timer>>) -> TickManager {
+    pub fn new(timer: Arc<Mutex<Timer>>, global_context: GlobalContext) -> TickManager {
         TickManager {
             ticks: Arc::new(Mutex::new(0)),
             timer,
+            dma: global_context.dma.unwrap(),
+            ppu: global_context.ppu,
         }
     }
 
     pub fn cycle(&self, _cycles: u32) {
         //self.ticks += 1;
-        let n = _cycles * 4;
+        let n = _cycles;
         let mut ticks = self.get_ticks_ref().unwrap();
         for _ in 0..n {
-            *ticks += 1;
-            {
+            for _ in 0..4 {
+                *ticks += 1;
                 self.timer.lock().unwrap().tick();
             }
+
+            self.dma.lock().unwrap().dma_tick();
+
         }
     }
 

@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use crate::bus::addresses::AddrSpace;
 use crate::cartridge::{Cartridge, CartridgeError};
 use crate::cpu::interrupts::IFlagsRegister;
+use crate::dma::DMA;
 use crate::emu::GlobalContext;
 use crate::io::{IO, IoError};
 use crate::ppu::PPU;
@@ -87,6 +88,7 @@ pub struct BUS {
     cartridge: Option<Cartridge>,
     ram: Ram,
     ppu: Arc<Mutex<PPU>>,
+    dma: Arc<Mutex<DMA>>,
     io: Arc<Mutex<IO>>,
     interrupt_register: Arc<Mutex<IFlagsRegister>>,
 }
@@ -98,6 +100,7 @@ impl BUS {
             ram: Ram::new(),
             io: global_context.io.unwrap(),
             ppu: global_context.ppu,
+            dma: global_context.dma.unwrap(),
             interrupt_register: global_context.ie_register,
         }
     }
@@ -212,6 +215,10 @@ impl BUS {
     }
 
     fn write_to_oam(&mut self, address: u16, data: u8) -> Result<(), BusError> {
+        if self.dma.lock().unwrap().dma_transferring() {
+            return Ok(());
+        }
+
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
@@ -223,6 +230,10 @@ impl BUS {
     }
 
     fn read_from_oam(&self, address: u16) -> Result<u8, BusError> {
+        if self.dma.lock().unwrap().dma_transferring() {
+            return Ok(0xFF);
+        }
+
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {

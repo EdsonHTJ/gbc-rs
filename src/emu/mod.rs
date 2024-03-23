@@ -7,6 +7,7 @@ use crate::gfx::color::Color;
 use crate::gfx::Gfx;
 use std::time::Duration;
 use crate::cpu::interrupts::IFlagsRegister;
+use crate::dma::DMA;
 use crate::io::IO;
 use crate::ppu::PPU;
 use crate::tick::TickManager;
@@ -14,9 +15,13 @@ use crate::timer::Timer;
 
 const SCALE: u32 = 4;
 
-const WIDTH: u32 = 32 * 8 * SCALE;
+const WIDTH: u32 = 240 * SCALE;
 
-const HEIGHT: u32 = 16 * 8 * SCALE;
+const HEIGHT: u32 = 160 * SCALE;
+
+const DEBUG_H: u32 = 32 * 8 * SCALE;
+
+const DEBUG_W: u32 = 16 * 8 * SCALE;
 
 pub struct EMU {
     pub paused: bool,
@@ -34,10 +39,12 @@ pub struct EMU {
 pub struct GlobalContext {
     pub int_flags: Arc<Mutex<IFlagsRegister>>,
     pub ie_register: Arc<Mutex<IFlagsRegister>>,
-    pub tick_manager: TickManager,
+    pub timer: Arc<Mutex<Timer>>,
     pub ppu: Arc<Mutex<PPU>>,
     pub io: Option<Arc<Mutex<IO>>>,
     pub bus: Option<BusMutex>,
+    pub dma: Option<Arc<Mutex<DMA>>>,
+    pub tick_manager: Option<TickManager>,
 }
 
 impl GlobalContext {
@@ -45,22 +52,31 @@ impl GlobalContext {
         let int_flags = Arc::new(Mutex::new(IFlagsRegister::new()));
         let ie_register = Arc::new(Mutex::new(IFlagsRegister::new()));
         let timer = Arc::new(Mutex::new(Timer::new(int_flags.clone())));
-        let tick_manager = TickManager::new(timer.clone());
         let ppu = Arc::new(Mutex::new(PPU::new()));
         let mut ctx = GlobalContext {
             int_flags,
             ie_register,
-            tick_manager,
             ppu,
+            timer: timer.clone(),
             io: None,
             bus: None,
+            dma: None,
+            tick_manager: None,
         };
+
+        let dma = Arc::new(Mutex::new(DMA::new(ctx.clone())));
+        ctx.dma = Some(dma.clone());
+
+        let tick_manager = TickManager::new(timer.clone(), ctx.clone());
+        ctx.tick_manager = Some(tick_manager.clone());
 
         let io = Arc::new(Mutex::new(IO::new(ctx.clone())));
         ctx.io = Some(io.clone());
 
         let bus = BusMutex::new(ctx.clone());
         ctx.bus = Some(bus.clone());
+
+        dma.lock().unwrap().attach_bus(bus.clone());
 
         ctx
     }
@@ -75,12 +91,12 @@ impl EMU {
             paused: false,
             running: false,
             die: false,
-            tm: ctx.tick_manager.clone(),
+            tm: ctx.tick_manager.clone().unwrap(),
             bus: ctx.bus.unwrap(),
             cpu,
             ppu: ctx.ppu,
             gfx: Box::new(crate::gfx::sdl::SDL::new(WIDTH, HEIGHT, false).unwrap()),
-            debug_gfx: Box::new(crate::gfx::sdl::SDL::new(WIDTH, HEIGHT, true).unwrap()),
+            debug_gfx: Box::new(crate::gfx::sdl::SDL::new(DEBUG_W, DEBUG_H, true).unwrap()),
         };
 
 
