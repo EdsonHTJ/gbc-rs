@@ -81,7 +81,6 @@ impl BusMutex {
 
 pub struct BUS {
     ram: Ram,
-    dma: Arc<Mutex<DMA>>,
     io: Arc<Mutex<IO>>,
 }
 
@@ -90,7 +89,6 @@ impl BUS {
         BUS {
             ram: Ram::new(),
             io: global_context.io.unwrap(),
-            dma: global_context.dma.unwrap(),
         }
     }
 
@@ -192,7 +190,7 @@ impl BUS {
     }
 
     fn write_to_oam(&mut self, address: u16, data: u8) -> Result<(), BusError> {
-        if self.dma.lock().unwrap().dma_transferring() {
+        if DMA.lock().unwrap().dma_transferring() {
             return Ok(());
         }
 
@@ -207,7 +205,7 @@ impl BUS {
     }
 
     fn read_from_oam(&self, address: u16) -> Result<u8, BusError> {
-        if self.dma.lock().unwrap().dma_transferring() {
+        if DMA.lock().unwrap().dma_transferring() {
             return Ok(0xFF);
         }
 

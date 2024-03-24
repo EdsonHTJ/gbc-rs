@@ -12,7 +12,7 @@ use crate::dma::DMA;
 use crate::io::IO;
 use crate::lcd::LCD;
 use crate::ppu::{PPU, PPU_SINGLETON};
-use crate::tick::TickManager;
+use crate::tick::{TICKER_SINGLETON, TickManager};
 use crate::timer::Timer;
 
 const SCALE: u32 = 4;
@@ -28,7 +28,6 @@ const DEBUG_W: u32 = 16 * 8 * SCALE;
 pub struct EMU {
     pub paused: bool,
     pub running: bool,
-    pub tm: TickManager,
     pub bus: BusMutex,
     pub cpu: Arc<Mutex<CPU>>,
     pub gfx: Box<dyn Gfx>,
@@ -38,7 +37,6 @@ pub struct EMU {
 
 #[derive(Clone)]
 pub struct GlobalContext {
-    pub timer: Arc<Mutex<Timer>>,
     pub io: Option<Arc<Mutex<IO>>>,
     pub bus: Option<BusMutex>,
     pub dma: Option<Arc<Mutex<DMA>>>,
@@ -47,20 +45,12 @@ pub struct GlobalContext {
 
 impl GlobalContext {
     pub fn new() -> GlobalContext {
-        let timer = Arc::new(Mutex::new(Timer::new()));
         let mut ctx = GlobalContext {
-            timer: timer.clone(),
             io: None,
             bus: None,
             dma: None,
             tick_manager: None,
         };
-
-        let dma = Arc::new(Mutex::new(DMA::new(ctx.clone())));
-        ctx.dma = Some(dma.clone());
-
-        let tick_manager = TickManager::new(timer.clone(), ctx.clone());
-        ctx.tick_manager = Some(tick_manager.clone());
 
         let io = Arc::new(Mutex::new(IO::new(ctx.clone())));
         ctx.io = Some(io.clone());
@@ -84,7 +74,6 @@ impl EMU {
             paused: false,
             running: false,
             die: false,
-            tm: ctx.tick_manager.clone().unwrap(),
             bus: ctx.bus.unwrap(),
             cpu,
             gfx,
@@ -185,8 +174,7 @@ impl EMU {
 
         self.init_window();
         self.init_debug_window();
-        self.tm.set_ticks(0).unwrap();
-
+        TICKER_SINGLETON.lock().unwrap().set_ticks(0);
         let cpu_ref = self.cpu.clone();
         thread::spawn(move || {
             EMU::cpu_run(cpu_ref);

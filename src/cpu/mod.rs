@@ -14,7 +14,7 @@ use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS};
 use crate::debug::{formatter, trace};
 use crate::emu::GlobalContext;
 use crate::instructions::{Instruction, RegType};
-use crate::tick::TickManager;
+use crate::tick::{TICKER_SINGLETON, TickManager};
 
 pub struct CpuRegisters {
     pub a: u8,
@@ -59,7 +59,6 @@ pub struct CPU {
     pub interrupt_master_enable: bool,
     pub stopped: bool,
     pub bus: BusMutex,
-    pub tm: TickManager,
     pub previous_pc: u16,
 }
 
@@ -78,7 +77,6 @@ impl CPU {
             stopped: false,
             interrupt_master_enable: false,
             previous_pc: ROM_HEADER_START as u16,
-            tm: global.tick_manager.clone().unwrap(),
             bus: global.bus.unwrap(),
         }
     }
@@ -101,7 +99,7 @@ impl CPU {
     }
 
     pub fn cycle(&mut self, cycles: u32) {
-        self.tm.cycle(cycles);
+        TICKER_SINGLETON.lock().unwrap().cycle(cycles);
     }
 
     pub fn read_register(&self, reg_type: Option<RegType>) -> Result<u16, CpuError> {
@@ -278,7 +276,7 @@ impl CPU {
            // println!("{}", log);
             self.execute()?;
         } else {
-            self.tm.cycle(1);
+            self.cycle(1);
             if INTERRUPT_FLAGS.lock().unwrap().int_flags != 0 {
                 self.halted = false;
             }

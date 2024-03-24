@@ -4,7 +4,7 @@ use crate::dma::DMA;
 use crate::emu::GlobalContext;
 use crate::io::io_regions::IoRegions;
 use crate::lcd::LCD;
-use crate::timer::Timer;
+use crate::timer::{Timer, TIMER_SINGLETON};
 
 mod io_regions;
 mod serial;
@@ -19,7 +19,6 @@ pub struct IO {
     pub serial_data: u8,
     pub serial_control: u8,
     pub serial_message: String,
-    pub timer: Arc<Mutex<Timer>>,
 }
 
 impl IO {
@@ -28,7 +27,6 @@ impl IO {
             serial_data: 0,
             serial_control: 0,
             serial_message: String::new(),
-            timer: global.timer.clone(),
         }
     }
 
@@ -38,12 +36,12 @@ impl IO {
             IoRegions::SerialTransferData => Ok(self.serial_data),
             IoRegions::SerialTransferControl => Ok(self.serial_control),
             IoRegions::DividerRegister => {
-                let ticks = self.timer.lock().unwrap().get_divider();
+                let ticks = TIMER_SINGLETON.lock().unwrap().get_divider();
                 Ok((ticks >> 8) as u8)
             },
-            IoRegions::TimerCounter => Ok(self.timer.lock().unwrap().get_tima()),
-            IoRegions::TimerModulo => Ok(self.timer.lock().unwrap().get_tma()),
-            IoRegions::TimerControl => Ok(self.timer.lock().unwrap().get_tac()),
+            IoRegions::TimerCounter => Ok(TIMER_SINGLETON.lock().unwrap().get_tima()),
+            IoRegions::TimerModulo => Ok(TIMER_SINGLETON.lock().unwrap().get_tma()),
+            IoRegions::TimerControl => Ok(TIMER_SINGLETON.lock().unwrap().get_tac()),
             IoRegions::InterruptFlags => Ok(INTERRUPT_FLAGS.lock().unwrap().int_flags),
             IoRegions::Lcd => {
                 Ok(LCD.lock().unwrap().lcd_read(address as u16))
@@ -66,19 +64,19 @@ impl IO {
                 Ok(())
             },
             IoRegions::DividerRegister => {
-                self.timer.lock().unwrap().clear_divider();
+                TIMER_SINGLETON.lock().unwrap().clear_divider();
                 Ok(())
             },
             IoRegions::TimerCounter => {
-                self.timer.lock().unwrap().set_tima(data);
+                TIMER_SINGLETON.lock().unwrap().set_tima(data);
                 Ok(())
             },
             IoRegions::TimerModulo => {
-                self.timer.lock().unwrap().set_tma(data);
+                TIMER_SINGLETON.lock().unwrap().set_tma(data);
                 Ok(())
             },
             IoRegions::TimerControl => {
-                self.timer.lock().unwrap().set_tac(data);
+                TIMER_SINGLETON.lock().unwrap().set_tac(data);
                 Ok(())
             },
             IoRegions::InterruptFlags => {

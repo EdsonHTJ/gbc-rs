@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS, InterruptType};
 
+pub static TIMER_SINGLETON: Mutex<Timer> = Mutex::new(Timer{div: 0xAC00, tima: 0, tma: 0, tac: 0});
+
 pub struct Timer {
     div: u16,
     tima: u8,

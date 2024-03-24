@@ -1,69 +1,48 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 use crate::dma::DMA;
 use crate::emu::GlobalContext;
-use crate::timer::Timer;
+use crate::timer::{Timer, TIMER_SINGLETON};
 
-#[derive(Debug)]
-pub enum TickError {
-    GetTicksError,
-}
+pub static TICKER_SINGLETON: Mutex<TickManager> = Mutex::new(TickManager{ticks: 0});
 
 #[derive(Clone)]
 pub struct TickManager {
-    pub ticks: Arc<Mutex<u64>>,
-    pub timer: Arc<Mutex<Timer>>,
-    pub dma : Arc<Mutex<DMA>>,
+    pub ticks: u64,
 }
 
 impl TickManager {
-    pub fn new(timer: Arc<Mutex<Timer>>, global_context: GlobalContext) -> TickManager {
+    pub fn new() -> TickManager {
         TickManager {
-            ticks: Arc::new(Mutex::new(0)),
-            timer,
-            dma: global_context.dma.unwrap(),
+            ticks: 0,
         }
     }
 
-    pub fn cycle(&self, _cycles: u32) {
+    pub fn cycle(&mut self, _cycles: u32) {
         //self.ticks += 1;
         let n = _cycles;
-        let mut ticks = self.get_ticks_ref().unwrap();
         for _ in 0..n {
             for _ in 0..4 {
-                *ticks += 1;
-                self.timer.lock().unwrap().tick();
+                self.increment_ticks();
+                TIMER_SINGLETON.lock().unwrap().tick();
             }
 
-            self.dma.lock().unwrap().dma_tick();
+            DMA.lock().unwrap().dma_tick();
 
         }
     }
 
-    fn get_ticks_ref(&self) -> Result<MutexGuard<u64>, TickError> {
-        let ticks = match self.ticks.lock() {
-            Ok(ticks) => ticks,
-            Err(_) => return Err(TickError::GetTicksError),
-        };
-
-        Ok(ticks)
-    }
 
     #[allow(dead_code)]
-    pub fn increment_ticks(&self) -> Result<(), TickError>{
-        let mut ticks = self.get_ticks_ref()?;
-        *ticks += 1;
-        Ok(())
+    pub fn increment_ticks(&mut self) {
+        self.ticks += 1;
     }
 
-    pub fn get_ticks(&self) -> Result<u64, TickError> {
-        let ticks = self.get_ticks_ref()?;
-        Ok(*ticks)
+    pub fn get_ticks(&self) -> u64 {
+        self.ticks
     }
 
-    pub fn set_ticks(&self, new_ticks: u64) -> Result<(), TickError> {
-        let mut ticks = self.get_ticks_ref()?;
-        *ticks = new_ticks;
-        Ok(())
+    pub fn set_ticks(&mut self, new_ticks: u64) {
+        self.ticks = new_ticks;
     }
 }
 

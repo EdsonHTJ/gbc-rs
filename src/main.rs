@@ -1,3 +1,5 @@
+use crate::tick::TICKER_SINGLETON;
+
 mod bus;
 mod cartridge;
 mod cpu;
@@ -21,7 +23,7 @@ fn main() {
     emu.run();
     println!("EMU is paused: {}", emu.paused);
     println!("EMU is running: {}", emu.running);
-    println!("EMU ticks: {}", emu.tm.get_ticks().unwrap());
+    println!("EMU ticks: {}", TICKER_SINGLETON.lock().unwrap().get_ticks());
 
     println!("Cpu Trace:");
     debug::trace::Trace::print_last_static(20);

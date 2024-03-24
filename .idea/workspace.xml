@@ -10,9 +10,14 @@
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cpu/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/error.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/debug/formatter.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/debug/formatter.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ppu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ppu/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/io/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/io/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/tick/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tick/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/timer/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/timer/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -126,7 +131,7 @@
       <workItem from="1710898217947" duration="3539000" />
       <workItem from="1711128796421" duration="21000" />
       <workItem from="1711166339435" duration="4294000" />
-      <workItem from="1711232932159" duration="14703000" />
+      <workItem from="1711232932159" duration="15286000" />
     </task>
     <servers />
   </component>
@@ -143,7 +148,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/timer/mod.rs</url>
-          <line>60</line>
+          <line>62</line>
           <option name="timeStamp" value="100" />
         </line-breakpoint>
       </breakpoints>
