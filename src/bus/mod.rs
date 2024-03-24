@@ -7,7 +7,7 @@ use crate::cartridge::{Cartridge, CARTRIDGE_SINGLETON, CartridgeError};
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_ENABLE};
 use crate::dma::DMA;
 use crate::emu::GlobalContext;
-use crate::io::{IO, IoError};
+use crate::io::{IO, IO_SINGLETON, IoError};
 use crate::ppu::{PPU, PPU_SINGLETON};
 use crate::ram::{Ram, RamError};
 
@@ -81,14 +81,12 @@ impl BusMutex {
 
 pub struct BUS {
     ram: Ram,
-    io: Arc<Mutex<IO>>,
 }
 
 impl BUS {
     pub fn new(global_context: GlobalContext) -> BUS {
         BUS {
             ram: Ram::new(),
-            io: global_context.io.unwrap(),
         }
     }
 
@@ -173,7 +171,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::IO => Ok(self.io.lock().unwrap().read((address & 0xFF) as u8)?),
+            AddrSpace::IO => Ok(IO_SINGLETON.lock().unwrap().read((address & 0xFF) as u8)?),
             _ => Err(BusError::InvalidAddress),
         }
     }
@@ -182,7 +180,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::IO => self.io.lock().unwrap().write((address &0xFF) as u8, data)?,
+            AddrSpace::IO => IO_SINGLETON.lock().unwrap().write((address &0xFF) as u8, data)?,
             _ => return Err(BusError::InvalidAddress),
         }
 

@@ -15,6 +15,8 @@ pub enum IoError {
     InvalidAddress,
 }
 
+pub static IO_SINGLETON: Mutex<IO> = Mutex::new(IO{serial_data: 0, serial_control: 0, serial_message: String::new()});
+
 pub struct IO {
     pub serial_data: u8,
     pub serial_control: u8,
@@ -22,7 +24,7 @@ pub struct IO {
 }
 
 impl IO {
-    pub fn new(global: GlobalContext) -> IO {
+    pub fn new() -> IO {
         IO {
             serial_data: 0,
             serial_control: 0,

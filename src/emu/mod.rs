@@ -52,9 +52,6 @@ impl GlobalContext {
             tick_manager: None,
         };
 
-        let io = Arc::new(Mutex::new(IO::new(ctx.clone())));
-        ctx.io = Some(io.clone());
-
         let bus = BusMutex::new(ctx.clone());
         ctx.bus = Some(bus.clone());
 
