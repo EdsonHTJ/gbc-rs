@@ -1,3 +1,6 @@
+use std::sync::{Arc, Mutex};
+use sdl2::keyboard::Keycode::Mute;
+
 pub const ROM_HEADER_START: usize = 0x100;
 
 #[allow(dead_code)]
@@ -92,6 +95,8 @@ impl RomHeader {
     }
 }
 
+pub static CARTRIDGE_SINGLETON : Mutex<Option<Cartridge>> = Mutex::new(None);
+
 pub struct Cartridge {
     pub rom_header: RomHeader,
     pub rom_data: Vec<u8>,
@@ -102,10 +107,12 @@ impl Cartridge {
         let rom_data = content;
         let rom_header = RomHeader::from_rom(&rom_data)?;
 
-        Ok(Cartridge {
+        let cartridge = Cartridge {
             rom_header,
             rom_data,
-        })
+        };
+
+        Ok(cartridge)
     }
 
     #[allow(dead_code)]

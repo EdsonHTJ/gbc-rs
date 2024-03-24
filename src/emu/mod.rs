@@ -6,6 +6,7 @@ use crate::cpu::{CPU};
 use crate::gfx::color::Color;
 use crate::gfx::Gfx;
 use std::time::Duration;
+use crate::cartridge::{Cartridge, CARTRIDGE_SINGLETON};
 use crate::cpu::interrupts::IFlagsRegister;
 use crate::dma::DMA;
 use crate::io::IO;
@@ -121,7 +122,9 @@ impl EMU {
 
     pub fn load_game(&mut self, filename: String) {
         let content = std::fs::read(&filename).unwrap();
-        self.bus.load_game(content).unwrap();
+        let new_cartridge = Cartridge::new(content).unwrap();
+        let mut current_cartridge = CARTRIDGE_SINGLETON.lock().unwrap();
+        *current_cartridge = Some(new_cartridge);
     }
 
     pub fn stop(&mut self) {

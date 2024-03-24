@@ -3,7 +3,7 @@ mod writers;
 
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use crate::bus::addresses::AddrSpace;
-use crate::cartridge::{Cartridge, CartridgeError};
+use crate::cartridge::{Cartridge, CARTRIDGE_SINGLETON, CartridgeError};
 use crate::cpu::interrupts::IFlagsRegister;
 use crate::dma::DMA;
 use crate::emu::GlobalContext;
@@ -57,11 +57,6 @@ impl BusMutex {
         }
     }
 
-    pub fn load_game(&self, rom: Vec<u8>) -> Result<(), BusError> {
-        let mut bus = self.bus.lock()?;
-        bus.load_game(rom)
-    }
-
     pub fn read(&self, address: u16) -> Result<u8, BusError> {
         let mut bus = self.bus.lock()?;
         bus.read(address)
@@ -85,7 +80,6 @@ impl BusMutex {
 }
 
 pub struct BUS {
-    cartridge: Option<Cartridge>,
     ram: Ram,
     ppu: Arc<Mutex<PPU>>,
     dma: Arc<Mutex<DMA>>,
@@ -96,19 +90,12 @@ pub struct BUS {
 impl BUS {
     pub fn new(global_context: GlobalContext) -> BUS {
         BUS {
-            cartridge: None,
             ram: Ram::new(),
             io: global_context.io.unwrap(),
             ppu: global_context.ppu.unwrap(),
             dma: global_context.dma.unwrap(),
             interrupt_register: global_context.ie_register,
         }
-    }
-
-    pub fn load_game(&mut self, rom: Vec<u8>) -> Result<(), BusError> {
-        let cartridge = Cartridge::new(rom)?;
-        self.cartridge = Some(cartridge);
-        Ok(())
     }
 
     pub fn read(&mut self, address: u16) -> Result<u8, BusError> {
@@ -137,11 +124,8 @@ impl BUS {
     }
 
     fn read_from_cartridge(&mut self, address: u16) -> Result<u8, BusError> {
-        if self.cartridge.is_none() {
-            return Err(BusError::NoCartridgeLoaded);
-        }
-
-        let cartridge = self.cartridge.as_mut().unwrap();
+        let binding = CARTRIDGE_SINGLETON.lock().unwrap();
+        let cartridge = binding.as_ref().unwrap();
 
         cartridge
             .read(address)
@@ -149,11 +133,8 @@ impl BUS {
     }
 
     fn write_to_cartridge(&mut self, address: u16, data: u8) -> Result<(), BusError> {
-        if self.cartridge.is_none() {
-            return Err(BusError::NoCartridgeLoaded);
-        }
-
-        let cartridge = self.cartridge.as_mut().unwrap();
+        let mut binding = CARTRIDGE_SINGLETON.lock().unwrap();
+        let mut cartridge = binding.as_mut().unwrap();
 
         cartridge
             .write(address, data)

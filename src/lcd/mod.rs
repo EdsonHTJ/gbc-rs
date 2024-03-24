@@ -172,7 +172,7 @@ impl LCD {
     pub fn lcd_read(&self, mut address: u16) -> u8 {
         unsafe {
             let lcd_buff = std::slice::from_raw_parts(&self.register as *const LcdRegisters as *const u8, std::mem::size_of::<LcdRegisters>());
-            if address >= lcd_buff.len() as u16 {
+            if address >= 0xFF40 {
                 address -= 0xFF40;
             }
 
@@ -211,7 +211,7 @@ impl LCD {
     pub fn lcd_write(&mut self, mut address: u16, data: u8) {
         unsafe {
             let mut lcd_buff = std::slice::from_raw_parts_mut(&self.register as *const LcdRegisters as *mut u8, std::mem::size_of::<LcdRegisters>());
-            if address >= lcd_buff.len() as u16 {
+            if address >= 0xFF40u16 {
                 address -= 0xFF40;
             }
 
