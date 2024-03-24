@@ -1,7 +1,6 @@
 
 use std::sync::{Arc, Mutex};
 use std::thread;
-use crate::bus::{BusMutex};
 use crate::cpu::{CPU};
 use crate::gfx::color::Color;
 use crate::gfx::Gfx;
@@ -28,50 +27,24 @@ const DEBUG_W: u32 = 16 * 8 * SCALE;
 pub struct EMU {
     pub paused: bool,
     pub running: bool,
-    pub bus: BusMutex,
     pub cpu: Arc<Mutex<CPU>>,
     pub gfx: Box<dyn Gfx>,
     pub debug_gfx: Box<dyn Gfx>,
     pub die: bool,
 }
 
-#[derive(Clone)]
-pub struct GlobalContext {
-    pub io: Option<Arc<Mutex<IO>>>,
-    pub bus: Option<BusMutex>,
-    pub dma: Option<Arc<Mutex<DMA>>>,
-    pub tick_manager: Option<TickManager>,
-}
-
-impl GlobalContext {
-    pub fn new() -> GlobalContext {
-        let mut ctx = GlobalContext {
-            io: None,
-            bus: None,
-            dma: None,
-            tick_manager: None,
-        };
-
-        let bus = BusMutex::new(ctx.clone());
-        ctx.bus = Some(bus.clone());
-
-        ctx
-    }
-}
 
 impl EMU {
     pub fn default() -> EMU {
         let gfx = Box::new(crate::gfx::sdl::SDL::new(WIDTH, HEIGHT, false).unwrap());
         let debug_gfx = Box::new(crate::gfx::sdl::SDL::new(DEBUG_W, DEBUG_H, true).unwrap());
 
-        let ctx = GlobalContext::new();
-        let cpu = Arc::new(Mutex::new(CPU::new(ctx.clone())));
+        let cpu = Arc::new(Mutex::new(CPU::new()));
 
         let emu = EMU {
             paused: false,
             running: false,
             die: false,
-            bus: ctx.bus.unwrap(),
             cpu,
             gfx,
             debug_gfx,

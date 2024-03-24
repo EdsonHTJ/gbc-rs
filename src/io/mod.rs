@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS};
 use crate::dma::DMA;
-use crate::emu::GlobalContext;
 use crate::io::io_regions::IoRegions;
 use crate::lcd::LCD;
 use crate::timer::{Timer, TIMER_SINGLETON};

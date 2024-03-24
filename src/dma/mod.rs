@@ -1,6 +1,5 @@
 use std::sync::{Arc, Mutex};
-use crate::bus::{BUS, BusMutex};
-use crate::emu::GlobalContext;
+use crate::bus::{BUS};
 use crate::ppu::PPU;
 
 
@@ -19,7 +18,7 @@ pub struct DMA {
 }
 
 impl DMA {
-    pub fn new(global_context: GlobalContext) -> DMA {
+    pub fn new() -> DMA {
         DMA {
             active: false,
             byte: 0,

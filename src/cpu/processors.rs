@@ -1,3 +1,4 @@
+use crate::bus::BUS_SINGLETON;
 use crate::cpu::error::CpuError;
 use crate::cpu::flags::FlagMode;
 use crate::cpu::CPU;
@@ -31,9 +32,9 @@ impl CPU {
             if RegType::is_some_16_bit(self.current_instruction.reg_2) {
                 cycles += 1;
                 self.cycle(1);
-                self.bus.write_16(self.mem_dest, self.fetch_data)?;
+                BUS_SINGLETON.lock().unwrap().write_16(self.mem_dest, self.fetch_data)?;
             } else {
-                self.bus.write(self.mem_dest, self.fetch_data as u8)?;
+                BUS_SINGLETON.lock().unwrap().write(self.mem_dest, self.fetch_data as u8)?;
             }
             cycles += 1;
             self.cycle(1);
@@ -82,10 +83,10 @@ impl CPU {
         if self.current_instruction.reg_1 == Some(RegType::RtA) {
             self.write_register(
                 self.current_instruction.reg_1,
-                self.bus.read(0xFF00 | self.fetch_data)? as u16,
+                BUS_SINGLETON.lock().unwrap().read(0xFF00 | self.fetch_data)? as u16,
             )?;
         } else {
-            self.bus.write(0xFF00 | self.mem_dest, self.registers.a)?;
+            BUS_SINGLETON.lock().unwrap().write(0xFF00 | self.mem_dest, self.registers.a)?;
         }
 
         self.cycle(1);
@@ -184,9 +185,9 @@ impl CPU {
         if (self.current_instruction.reg_1 == Some(RegType::RtHl))
             && (self.current_instruction.mode == AddrMode::AmMr)
         {
-            value = (self.bus.read(self.read_register_r1()?)? + 1) as u16;
+            value = (BUS_SINGLETON.lock().unwrap().read(self.read_register_r1()?)? + 1) as u16;
             value &= 0xFF;
-            self.bus.write(self.read_register_r1()?, value as u8)?;
+            BUS_SINGLETON.lock().unwrap().write(self.read_register_r1()?, value as u8)?;
         } else {
             self.write_register_r1(value)?;
             value = self.read_register_r1()?;
@@ -216,9 +217,9 @@ impl CPU {
         if (self.current_instruction.reg_1 == Some(RegType::RtHl))
             && (self.current_instruction.mode == AddrMode::AmMr)
         {
-            value = (self.bus.read(self.read_register_r1()?)?.wrapping_add_signed(-1)) as u16;
+            value = (BUS_SINGLETON.lock().unwrap().read(self.read_register_r1()?)?.wrapping_add_signed(-1)) as u16;
             value &= 0xFF;
-            self.bus.write(self.read_register_r1()?, value as u8)?;
+            BUS_SINGLETON.lock().unwrap().write(self.read_register_r1()?, value as u8)?;
         } else {
             self.write_register_r1(value)?;
             value = self.read_register_r1()?;

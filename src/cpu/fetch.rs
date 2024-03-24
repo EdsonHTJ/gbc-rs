@@ -1,10 +1,11 @@
+use crate::bus::BUS_SINGLETON;
 use crate::cpu::error::CpuError;
 use crate::cpu::CPU;
 use crate::instructions::{AddrMode, Instruction, RegType};
 
 impl CPU {
     pub fn fetch_instruction(&mut self) -> Result<(), CpuError> {
-        self.current_opcode = self.bus.read(self.registers.pc)?;
+        self.current_opcode = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)?;
         self.current_instruction = Instruction::by_opcode(self.current_opcode)
             .ok_or(CpuError::InvalidInstruction(self.current_opcode as u32))?;
         self.previous_pc = self.registers.pc;
@@ -27,19 +28,19 @@ impl CPU {
                 Ok(0)
             }
             AddrMode::AmRD8 => {
-                self.fetch_data = self.bus.read(self.registers.pc)? as u16;
+                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
 
                 self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmD16 | AddrMode::AmRD16 => {
-                let low = self.bus.read(self.registers.pc)? as u16;
+                let low = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
 
                 self.cycle(1);
                 self.registers.pc += 1;
 
-                let high = self.bus.read(self.registers.pc)? as u16;
+                let high = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.cycle(1);
                 self.registers.pc += 1;
 
@@ -63,12 +64,12 @@ impl CPU {
                     self.mem_dest |= 0xFF00;
                 }
 
-                self.fetch_data = self.bus.read(addr)? as u16;
+                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(addr)? as u16;
                 self.cycle(1);
                 Ok(1)
             }
             AddrMode::AmRHli => {
-                self.fetch_data = self.bus.read(self.read_register(Some(RegType::RtHl))?)? as u16;
+                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(self.read_register(Some(RegType::RtHl))?)? as u16;
                 self.cycle(1);
                 self.write_register(
                     Some(RegType::RtHl),
@@ -77,7 +78,7 @@ impl CPU {
                 Ok(1)
             }
             AddrMode::AmRHld => {
-                self.fetch_data = self.bus.read(self.read_register(Some(RegType::RtHl))?)? as u16;
+                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(self.read_register(Some(RegType::RtHl))?)? as u16;
                 self.cycle(1);
                 self.write_register(
                     Some(RegType::RtHl),
@@ -106,36 +107,36 @@ impl CPU {
                 Ok(0)
             }
             AddrMode::AmRA8 => {
-                self.fetch_data = self.bus.read(self.registers.pc)? as u16;
+                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmA8R => {
-                self.mem_dest = self.bus.read(self.registers.pc)? as u16;
+                self.mem_dest = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.dest_is_mem = true;
                 self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmHlSpr => {
-                self.fetch_data = self.bus.read(self.registers.pc)? as u16;
+                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmD8 => {
-                self.fetch_data = self.bus.read(self.registers.pc)? as u16;
+                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.cycle(1);
                 self.registers.pc += 1;
                 Ok(1)
             }
             AddrMode::AmA16R | AddrMode::AmD16R => {
-                let low = self.bus.read(self.registers.pc)? as u16;
+                let low = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.cycle(1);
                 self.registers.pc += 1;
 
-                let high = self.bus.read(self.registers.pc)? as u16;
+                let high = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.cycle(1);
                 self.registers.pc += 1;
 
@@ -149,7 +150,7 @@ impl CPU {
                 Ok(2)
             }
             AddrMode::AmMrD8 => {
-                self.fetch_data = self.bus.read(self.registers.pc)? as u16;
+                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.cycle(1);
                 self.registers.pc += 1;
                 self.mem_dest = self.read_register(self.current_instruction.reg_1)?;
@@ -160,21 +161,21 @@ impl CPU {
                 self.mem_dest = self.read_register(self.current_instruction.reg_1)?;
                 self.dest_is_mem = true;
                 self.fetch_data =
-                    self.bus.read(self.read_register(self.current_instruction.reg_1)?)? as u16;
+                    BUS_SINGLETON.lock().unwrap().read(self.read_register(self.current_instruction.reg_1)?)? as u16;
                 self.cycle(1);
                 Ok(1)
             }
             AddrMode::AmRA16 => {
-                let low = self.bus.read(self.registers.pc)? as u16;
+                let low = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.cycle(1);
                 self.registers.pc += 1;
 
-                let high = self.bus.read(self.registers.pc)? as u16;
+                let high = BUS_SINGLETON.lock().unwrap().read(self.registers.pc)? as u16;
                 self.cycle(1);
                 self.registers.pc += 1;
 
                 let addr = (high << 8) | low;
-                self.fetch_data = self.bus.read(addr)? as u16;
+                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(addr)? as u16;
                 self.cycle(1);
                 Ok(3)
             }

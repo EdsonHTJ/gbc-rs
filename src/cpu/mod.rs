@@ -7,12 +7,11 @@ mod stack;
 
 
 use std::sync::{Arc, Mutex};
-use crate::bus::{BusMutex};
+use crate::bus::BUS_SINGLETON;
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS};
 use crate::debug::{formatter, trace};
-use crate::emu::GlobalContext;
 use crate::instructions::{Instruction, RegType};
 use crate::tick::{TICKER_SINGLETON, TickManager};
 
@@ -58,12 +57,11 @@ pub struct CPU {
     pub enable_ime: bool,
     pub interrupt_master_enable: bool,
     pub stopped: bool,
-    pub bus: BusMutex,
     pub previous_pc: u16,
 }
 
 impl CPU {
-    pub fn new(global: GlobalContext) -> CPU {
+    pub fn new() -> CPU {
         CPU {
             registers: CpuRegisters::new(),
             fetch_data: 0,
@@ -77,7 +75,6 @@ impl CPU {
             stopped: false,
             interrupt_master_enable: false,
             previous_pc: ROM_HEADER_START as u16,
-            bus: global.bus.unwrap(),
         }
     }
 
@@ -224,7 +221,7 @@ impl CPU {
             RegType::RtL => self.registers.l,
             RegType::RtHl => {
                 let addr = self.read_register(Some(RegType::RtHl))?;
-                return Ok(self.bus.read(addr)?);
+                return Ok(BUS_SINGLETON.lock().unwrap().read(addr)?);
             }
             _ => return Err(CpuError::InvalidRegister),
         };
@@ -253,7 +250,7 @@ impl CPU {
             RegType::RtL => self.registers.l = value,
             RegType::RtHl => {
                 let addr = self.read_register(Some(RegType::RtHl))?;
-                self.bus.write(addr, value)?;
+                BUS_SINGLETON.lock().unwrap().write(addr, value)?;
             }
             _ => return Err(CpuError::InvalidRegister),
         };

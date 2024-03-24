@@ -2,7 +2,6 @@ use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
 use crate::cpu::CPU;
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS, InterruptType};
-use crate::emu::GlobalContext;
 use crate::lcd::{LCD, LCDMode, StatSrc};
 use crate::tick::TickManager;
 

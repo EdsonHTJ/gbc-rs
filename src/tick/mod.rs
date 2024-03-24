@@ -1,6 +1,5 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 use crate::dma::DMA;
-use crate::emu::GlobalContext;
 use crate::timer::{Timer, TIMER_SINGLETON};
 
 pub static TICKER_SINGLETON: Mutex<TickManager> = Mutex::new(TickManager{ticks: 0});

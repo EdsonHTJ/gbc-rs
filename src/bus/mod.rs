@@ -2,11 +2,11 @@ mod addresses;
 mod writers;
 
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use once_cell::sync::Lazy;
 use crate::bus::addresses::AddrSpace;
 use crate::cartridge::{Cartridge, CARTRIDGE_SINGLETON, CartridgeError};
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_ENABLE};
 use crate::dma::DMA;
-use crate::emu::GlobalContext;
 use crate::io::{IO, IO_SINGLETON, IoError};
 use crate::ppu::{PPU, PPU_SINGLETON};
 use crate::ram::{Ram, RamError};
@@ -17,7 +17,6 @@ pub enum BusError {
     CartridgeError(CartridgeError),
     InvalidAddress,
     RamError(RamError),
-    MutexError,
     IoError(IoError),
 }
 
@@ -33,58 +32,20 @@ impl From<RamError> for BusError {
     }
 }
 
-impl From<PoisonError<MutexGuard<'_, BUS>>> for BusError {
-    fn from(_: PoisonError<MutexGuard<'_, BUS>>) -> BusError {
-        BusError::MutexError
-    }
-}
-
 impl From<IoError> for BusError {
     fn from(e: IoError) -> BusError {
         BusError::IoError(e)
     }
 }
 
-#[derive(Clone)]
-pub struct BusMutex {
-    pub bus: Arc<Mutex<BUS>>,
-}
-
-impl BusMutex {
-    pub fn new(global_context: GlobalContext) -> BusMutex {
-        BusMutex {
-            bus: Arc::new(Mutex::new(BUS::new(global_context))),
-        }
-    }
-
-    pub fn read(&self, address: u16) -> Result<u8, BusError> {
-        let mut bus = self.bus.lock()?;
-        bus.read(address)
-    }
-
-    #[allow(dead_code)]
-    pub fn read_16(&self, address: u16) -> Result<u16, BusError> {
-        let mut bus = self.bus.lock()?;
-        bus.read_16(address)
-    }
-
-    pub fn write(&self, address: u16, data: u8) -> Result<(), BusError> {
-        let mut bus = self.bus.lock()?;
-        bus.write(address, data)
-    }
-
-    pub fn write_16(&self, address: u16, data: u16) -> Result<(), BusError> {
-        let mut bus = self.bus.lock()?;
-        bus.write_16(address, data)
-    }
-}
+pub static BUS_SINGLETON: Lazy<Mutex<BUS>> = Lazy::new(|| Mutex::new(BUS::new()));
 
 pub struct BUS {
     ram: Ram,
 }
 
 impl BUS {
-    pub fn new(global_context: GlobalContext) -> BUS {
+    pub fn new() -> BUS {
         BUS {
             ram: Ram::new(),
         }

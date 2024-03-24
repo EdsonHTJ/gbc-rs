@@ -18,7 +18,7 @@ mod lcd;
 
 fn main() {
     let mut emu = emu::EMU::default();
-    let filename = "./games/01-special.gb".to_string();
+    let filename = "./games/02-interrupts.gb".to_string();
     emu.load_game(filename);
     emu.run();
     println!("EMU is paused: {}", emu.paused);
