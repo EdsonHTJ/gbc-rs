@@ -8,7 +8,7 @@ pub struct DMA {
     byte: u8,
     value: u8,
     start_delay: u8,
-    ppu: Arc<Mutex<PPU>>,
+    ppu: Option<Arc<Mutex<PPU>>>,
     bus : Option<BusMutex>,
 }
 
@@ -26,6 +26,10 @@ impl DMA {
 
     pub fn attach_bus(&mut self, bus: BusMutex) {
         self.bus = Some(bus);
+    }
+
+    pub fn attach_ppu(&mut self, ppu: Arc<Mutex<PPU>>) {
+        self.ppu = Some(ppu);
     }
 
     pub fn dma_start(&mut self, value: u8) {
@@ -52,7 +56,7 @@ impl DMA {
             }
         }
 
-        self.ppu.lock().unwrap().oam_write(self.byte as u16, self.bus.as_mut().unwrap().read((self.value as u16) * 0x100 + self.byte as u16).unwrap());
+        self.ppu.as_mut().unwrap().lock().unwrap().oam_write(self.byte as u16, self.bus.as_mut().unwrap().read((self.value as u16) * 0x100 + self.byte as u16).unwrap());
         self.byte += 1;
         self.active = self.byte < 0xA0;
     }

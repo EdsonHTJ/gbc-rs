@@ -4,6 +4,7 @@ use crate::gfx::{Gfx, GfxError, UserEvents};
 pub struct SDL {
     pub canvas: sdl2::render::Canvas<sdl2::video::Window>,
     pub event_pump: Option<sdl2::EventPump>,
+    pub sdl_context: sdl2::Sdl,
 }
 
 impl SDL {
@@ -39,14 +40,14 @@ impl SDL {
         };
 
         if isDebug {
-            return Ok(SDL { canvas, event_pump: None });
+            return Ok(SDL { canvas, event_pump: None, sdl_context });
         }
         let event_pump = match sdl_context.event_pump() {
             Ok(event_pump) => event_pump,
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
 
-        Ok(SDL { canvas, event_pump: Some(event_pump)})
+        Ok(SDL { canvas, event_pump: Some(event_pump), sdl_context})
     }
 }
 impl Gfx for SDL {
@@ -88,5 +89,9 @@ impl Gfx for SDL {
                 _ => UserEvents::Unknown,
             })
             .collect()
+    }
+
+    fn get_ticks(&self) -> Result<u32, String> {
+        Ok(self.sdl_context.timer().unwrap().ticks())
     }
 }

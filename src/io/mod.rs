@@ -3,6 +3,7 @@ use crate::cpu::interrupts::IFlagsRegister;
 use crate::dma::DMA;
 use crate::emu::GlobalContext;
 use crate::io::io_regions::IoRegions;
+use crate::lcd::LCD;
 use crate::timer::Timer;
 
 mod io_regions;
@@ -20,8 +21,7 @@ pub struct IO {
     pub serial_message: String,
     pub timer: Arc<Mutex<Timer>>,
     pub int_flags: Arc<Mutex<IFlagsRegister>>,
-    pub dma: Arc<Mutex<DMA>>,
-    pub ly: u8,
+    pub lcd: Arc<Mutex<LCD>>,
 }
 
 impl IO {
@@ -32,8 +32,7 @@ impl IO {
             serial_control: 0,
             serial_message: String::new(),
             timer: global.timer.clone(),
-            dma: global.dma.unwrap(),
-            ly: 0,
+            lcd: global.lcd.unwrap(),
         }
     }
 
@@ -50,11 +49,8 @@ impl IO {
             IoRegions::TimerModulo => Ok(self.timer.lock().unwrap().get_tma()),
             IoRegions::TimerControl => Ok(self.timer.lock().unwrap().get_tac()),
             IoRegions::InterruptFlags => Ok(self.int_flags.lock().unwrap().int_flags),
-            IoRegions::LCDYCoordinate => {
-                let ly = self.ly;
-                self.ly %= 255;
-                self.ly += 1;
-                Ok(ly)
+            IoRegions::Lcd => {
+                Ok(self.lcd.lock().unwrap().lcd_read(address as u16))
             },
             _ => Ok(0),
         }
@@ -93,8 +89,8 @@ impl IO {
                 self.int_flags.lock().unwrap().int_flags = data;
                 Ok(())
             },
-            IoRegions::DMATransfer => {
-                self.dma.lock().unwrap().dma_start(data);
+            IoRegions::Lcd => {
+                self.lcd.lock().unwrap().lcd_write(address as u16, data);
                 Ok(())
             },
 

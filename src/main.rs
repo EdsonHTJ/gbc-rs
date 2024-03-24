@@ -12,6 +12,7 @@ mod debug;
 mod timer;
 mod ppu;
 mod dma;
+mod lcd;
 
 fn main() {
     let mut emu = emu::EMU::default();

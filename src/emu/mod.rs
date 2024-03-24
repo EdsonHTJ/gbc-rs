@@ -9,7 +9,8 @@ use std::time::Duration;
 use crate::cpu::interrupts::IFlagsRegister;
 use crate::dma::DMA;
 use crate::io::IO;
-use crate::ppu::PPU;
+use crate::lcd::LCD;
+use crate::ppu::{PPU};
 use crate::tick::TickManager;
 use crate::timer::Timer;
 
@@ -40,7 +41,8 @@ pub struct GlobalContext {
     pub int_flags: Arc<Mutex<IFlagsRegister>>,
     pub ie_register: Arc<Mutex<IFlagsRegister>>,
     pub timer: Arc<Mutex<Timer>>,
-    pub ppu: Arc<Mutex<PPU>>,
+    pub ppu: Option<Arc<Mutex<PPU>>>,
+    pub lcd: Option<Arc<Mutex<LCD>>>,
     pub io: Option<Arc<Mutex<IO>>>,
     pub bus: Option<BusMutex>,
     pub dma: Option<Arc<Mutex<DMA>>>,
@@ -52,20 +54,26 @@ impl GlobalContext {
         let int_flags = Arc::new(Mutex::new(IFlagsRegister::new()));
         let ie_register = Arc::new(Mutex::new(IFlagsRegister::new()));
         let timer = Arc::new(Mutex::new(Timer::new(int_flags.clone())));
-        let ppu = Arc::new(Mutex::new(PPU::new()));
         let mut ctx = GlobalContext {
             int_flags,
             ie_register,
-            ppu,
             timer: timer.clone(),
             io: None,
             bus: None,
             dma: None,
             tick_manager: None,
+            ppu: None,
+            lcd: None,
         };
 
         let dma = Arc::new(Mutex::new(DMA::new(ctx.clone())));
         ctx.dma = Some(dma.clone());
+
+        let lcd = Arc::new(Mutex::new(LCD::new(dma.clone())));
+        ctx.lcd = Some(lcd.clone());
+
+        let ppu = Arc::new(Mutex::new(PPU::new(ctx.clone())));
+        ctx.ppu = Some(ppu.clone());
 
         let tick_manager = TickManager::new(timer.clone(), ctx.clone());
         ctx.tick_manager = Some(tick_manager.clone());
@@ -77,6 +85,7 @@ impl GlobalContext {
         ctx.bus = Some(bus.clone());
 
         dma.lock().unwrap().attach_bus(bus.clone());
+        dma.lock().unwrap().attach_ppu(ppu.clone());
 
         ctx
     }
@@ -84,6 +93,9 @@ impl GlobalContext {
 
 impl EMU {
     pub fn default() -> EMU {
+        let gfx = Box::new(crate::gfx::sdl::SDL::new(WIDTH, HEIGHT, false).unwrap());
+        let debug_gfx = Box::new(crate::gfx::sdl::SDL::new(DEBUG_W, DEBUG_H, true).unwrap());
+
         let ctx = GlobalContext::new();
         let cpu = Arc::new(Mutex::new(CPU::new(ctx.clone())));
 
@@ -94,9 +106,9 @@ impl EMU {
             tm: ctx.tick_manager.clone().unwrap(),
             bus: ctx.bus.unwrap(),
             cpu,
-            ppu: ctx.ppu,
-            gfx: Box::new(crate::gfx::sdl::SDL::new(WIDTH, HEIGHT, false).unwrap()),
-            debug_gfx: Box::new(crate::gfx::sdl::SDL::new(DEBUG_W, DEBUG_H, true).unwrap()),
+            ppu: ctx.ppu.unwrap(),
+            gfx,
+            debug_gfx,
         };
 
 

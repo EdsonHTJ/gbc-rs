@@ -22,4 +22,5 @@ pub trait Gfx {
     fn clear(&mut self, color: Color) -> ();
     fn draw_pixel(&mut self, x: i32, y: i32, color: Color) -> Result<(), GfxError>;
     fn get_user_events(&mut self) -> Vec<UserEvents>;
+    fn get_ticks(&self) -> Result<u32, String>;
 }

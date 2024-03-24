@@ -23,7 +23,7 @@ impl TickManager {
             ticks: Arc::new(Mutex::new(0)),
             timer,
             dma: global_context.dma.unwrap(),
-            ppu: global_context.ppu,
+            ppu: global_context.ppu.unwrap()
         }
     }
 

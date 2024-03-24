@@ -99,7 +99,7 @@ impl BUS {
             cartridge: None,
             ram: Ram::new(),
             io: global_context.io.unwrap(),
-            ppu: global_context.ppu,
+            ppu: global_context.ppu.unwrap(),
             dma: global_context.dma.unwrap(),
             interrupt_register: global_context.ie_register,
         }

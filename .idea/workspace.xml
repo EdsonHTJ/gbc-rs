@@ -8,11 +8,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/dma/mod.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/lcd/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cpu/interrupts.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/interrupts.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dma/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/dma/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gfx/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/gfx/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gfx/sdl.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/gfx/sdl.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/io/io_regions.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/io/io_regions.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/io/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/io/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ppu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ppu/mod.rs" afterDir="false" />
@@ -44,27 +48,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Cargo.Run gbc-rs.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Run.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test cartridge::tests::test_cartridge.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.Test cartridge::tests::test_validate_checksum.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/edson/gits/gbc-rs/games&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Cargo.Run gbc-rs.executor": "Run",
+    "Cargo.Run.executor": "Run",
+    "Cargo.Test cartridge::tests::test_cartridge.executor": "Run",
+    "Cargo.Test cartridge::tests::test_validate_checksum.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "/home/edson/gits/gbc-rs/games",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/games" />
@@ -130,7 +134,7 @@
       <workItem from="1710898217947" duration="3539000" />
       <workItem from="1711128796421" duration="21000" />
       <workItem from="1711166339435" duration="4294000" />
-      <workItem from="1711232932159" duration="2550000" />
+      <workItem from="1711232932159" duration="11570000" />
     </task>
     <servers />
   </component>
