@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 use crate::dma::DMA;
+use crate::ppu::PPU_SINGLETON;
 use crate::timer::{Timer, TIMER_SINGLETON};
 
 pub static TICKER_SINGLETON: Mutex<TickManager> = Mutex::new(TickManager{ticks: 0});
@@ -23,6 +24,7 @@ impl TickManager {
             for _ in 0..4 {
                 self.increment_ticks();
                 TIMER_SINGLETON.lock().unwrap().tick();
+                PPU_SINGLETON.lock().unwrap().ppu_tick();
             }
 
             DMA.lock().unwrap().dma_tick();

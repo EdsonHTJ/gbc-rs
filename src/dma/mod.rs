@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
-use crate::bus::{BUS};
-use crate::ppu::PPU;
+use crate::bus::{BUS, BUS_SINGLETON};
+use crate::ppu::{PPU, PPU_SINGLETON};
 
 
 pub static DMA : Mutex<DMA> = Mutex::new(DMA{
@@ -50,8 +50,8 @@ impl DMA {
                 self.active = false;
             }
         }
-        panic!("DMA tick not implemented");
-        // self.ppu.as_mut().unwrap().lock().unwrap().oam_write(self.byte as u16, self.bus.as_mut().unwrap().read((self.value as u16) * 0x100 + self.byte as u16).unwrap());
+
+        PPU_SINGLETON.lock().unwrap().oam_write(self.byte as u16, BUS_SINGLETON.lock().unwrap().read((self.value as u16) * 0x100 + self.byte as u16).unwrap());
         self.byte += 1;
         self.active = self.byte < 0xA0;
     }

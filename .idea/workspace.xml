@@ -9,14 +9,12 @@
   <component name="ChangeListManager">
     <list default="true" id="37dc20b5-6e90-42f9-bf07-c23b9b3174d2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bus/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/bus/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/fetch.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/fetch.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/processors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/processors.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cpu/stack.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/cpu/stack.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/dma/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/dma/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/emu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/emu/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/io/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/io/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gfx/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/gfx/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gfx/sdl.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/gfx/sdl.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ppu/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ppu/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/tick/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/tick/mod.rs" afterDir="false" />
@@ -152,6 +150,26 @@
           <url>file://$PROJECT_DIR$/src/timer/mod.rs</url>
           <line>62</line>
           <option name="timeStamp" value="100" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/ppu/mod.rs</url>
+          <line>129</line>
+          <option name="timeStamp" value="102" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/ppu/mod.rs</url>
+          <line>123</line>
+          <option name="timeStamp" value="103" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/ppu/mod.rs</url>
+          <line>189</line>
+          <option name="timeStamp" value="104" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/ppu/mod.rs</url>
+          <line>144</line>
+          <option name="timeStamp" value="106" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

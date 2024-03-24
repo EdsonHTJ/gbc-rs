@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use crate::gfx::color::Color;
 use crate::gfx::{Gfx, GfxError, UserEvents};
 
@@ -49,8 +50,23 @@ impl SDL {
 
         Ok(SDL { canvas, event_pump: Some(event_pump), sdl_context})
     }
+
+    pub(crate) fn get_ticks() -> u32 {
+        let sdl_context = sdl2::init().unwrap();
+        sdl_context.timer().unwrap().ticks()
+    }
+
+    pub(crate) fn delay(ms: u32) {
+        let sdl_context = sdl2::init().unwrap();
+        let mut timer = sdl_context.timer().unwrap();
+        timer.delay(ms);
+    }
 }
 impl Gfx for SDL {
+    fn new(width: u32, height: u32, is_debug: bool) -> Result<Self, GfxError> {
+        SDL::new(width, height, is_debug)
+    }
+
     fn init(&self) -> () {
         println!("Initializing SDL");
     }
@@ -89,9 +105,5 @@ impl Gfx for SDL {
                 _ => UserEvents::Unknown,
             })
             .collect()
-    }
-
-    fn get_ticks(&self) -> Result<u32, String> {
-        Ok(self.sdl_context.timer().unwrap().ticks())
     }
 }

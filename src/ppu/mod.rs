@@ -1,7 +1,9 @@
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use once_cell::sync::Lazy;
 use crate::cpu::CPU;
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS, InterruptType};
+use crate::debug::log::{Logger, LoggerTrait};
 use crate::lcd::{LCD, LCDMode, StatSrc};
 use crate::tick::TickManager;
 
@@ -76,22 +78,36 @@ pub struct PPU {
     current_frame: u32,
     line_ticks: u32,
     video_buffer: [u32; (XRES * YRES) as usize],
+    previous_frame_time: u32,
+    target_frame_time: u32,
+    start_timer: u32,
+    frame_count: u32,
 }
 
 impl PPU {
 
     pub fn new() -> PPU {
+        LCD.lock().unwrap().lcds_mode_set(LCDMode::OAM);
         PPU {
             oam_ram: [OAM::default(); 40],
             vram: [0; 0x2000],
             current_frame: 0,
             line_ticks: 0,
             video_buffer: [0; (XRES * YRES) as usize],
+            previous_frame_time: 0,
+            target_frame_time: TARGET_FRAME_TIME,
+            start_timer: 0,
+            frame_count: 0,
         }
+    }
+
+    pub fn get_current_frame(&self) -> u32 {
+        self.current_frame
     }
 
     pub fn increment_ly(&mut self) {
         let mut lcd = LCD.lock().unwrap();
+        lcd.register.ly += 1;
 
         if lcd.register.ly == lcd.register.ly_compare {
             lcd.lcds_lyc_set(true);
@@ -141,7 +157,25 @@ impl PPU {
 
                     //Calc fps
 
-                   // let end = self.ppu_ticks.get_ticks().unwrap();
+                    let end = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u32;
+                    let frame_time = end - self.previous_frame_time;
+
+                    if frame_time < self.target_frame_time {
+                        let delay = self.target_frame_time - frame_time;
+                        ::std::thread::sleep(Duration::from_millis(delay as u64));
+                    }
+
+                    if end - self.start_timer >= 1000 {
+                        let fps = self.frame_count;
+                        self.start_timer = end;
+                        self.frame_count = 0;
+
+                        Logger::log(format!("FPS: {}", fps));
+                    }
+
+                    self.frame_count += 1;
+                    self.previous_frame_time =  std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u32;
+
                 }else {
                     lcd.lcds_mode_set(LCDMode::OAM);
                 }

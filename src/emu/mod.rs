@@ -8,6 +8,7 @@ use std::time::Duration;
 use crate::cartridge::{Cartridge, CARTRIDGE_SINGLETON};
 use crate::cpu::interrupts::IFlagsRegister;
 use crate::dma::DMA;
+use crate::gfx;
 use crate::io::IO;
 use crate::lcd::LCD;
 use crate::ppu::{PPU, PPU_SINGLETON};
@@ -36,8 +37,8 @@ pub struct EMU {
 
 impl EMU {
     pub fn default() -> EMU {
-        let gfx = Box::new(crate::gfx::sdl::SDL::new(WIDTH, HEIGHT, false).unwrap());
-        let debug_gfx = Box::new(crate::gfx::sdl::SDL::new(DEBUG_W, DEBUG_H, true).unwrap());
+        let gfx  = gfx::get_gfx(WIDTH, HEIGHT, false).unwrap();
+        let debug_gfx = gfx::get_gfx(DEBUG_W, DEBUG_H, true).unwrap();
 
         let cpu = Arc::new(Mutex::new(CPU::new()));
 
@@ -150,21 +151,33 @@ impl EMU {
             EMU::cpu_run(cpu_ref);
         });
 
-
+        let mut prev_frame = 0;
         loop {
             if self.die {
                 break;
             }
-            self.ui_step();
-            self.delay(1);
+
+            self.ui_handle_events();
+
+            if prev_frame != PPU_SINGLETON.lock().unwrap().get_current_frame() {
+                self.ui_update();
+            }
+
+            prev_frame = PPU_SINGLETON.lock().unwrap().get_current_frame();
         }
     }
 
-    fn ui_step(&mut self) {
+    fn ui_update(&mut self) {
 
         //canvas.clear();
         self.update_window();
         self.update_debug_window();
+        // The rest of the game loop goes here...
+
+        self.gfx.present();
+    }
+
+    fn ui_handle_events(&mut self) {
         let event_pump = self.gfx.get_user_events();
         for event in &event_pump {
             match event {
@@ -178,9 +191,5 @@ impl EMU {
                 _ => {}
             }
         }
-
-        // The rest of the game loop goes here...
-
-        self.gfx.present();
     }
 }
