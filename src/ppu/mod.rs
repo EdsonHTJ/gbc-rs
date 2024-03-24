@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use crate::cpu::CPU;
-use crate::cpu::interrupts::{IFlagsRegister, InterruptType};
+use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS, InterruptType};
 use crate::emu::GlobalContext;
 use crate::lcd::{LCD, LCDMode, StatSrc};
 use crate::tick::TickManager;
@@ -72,7 +72,6 @@ pub struct PPU {
     current_frame: u32,
     line_ticks: u32,
     video_buffer: [u32; (XRES * YRES) as usize],
-    int_flags: Arc<Mutex<IFlagsRegister>>,
 }
 
 impl PPU {
@@ -84,7 +83,6 @@ impl PPU {
             current_frame: 0,
             line_ticks: 0,
             video_buffer: [0; (XRES * YRES) as usize],
-            int_flags: global_context.int_flags.clone(),
         }
     }
 
@@ -94,7 +92,7 @@ impl PPU {
         if lcd.register.ly == lcd.register.ly_compare {
             lcd.lcds_lyc_set(true);
             if (lcd.lcds_stat_int(StatSrc::LYC) != 0) {
-                self.int_flags.lock().unwrap().add_interrupt(InterruptType::LcdStat)
+                INTERRUPT_FLAGS.lock().unwrap().add_interrupt(InterruptType::LcdStat)
             }
         }else {
             lcd.lcds_lyc_set(false);
@@ -129,10 +127,10 @@ impl PPU {
                 let mut lcd = LCD.lock().unwrap();
                 if lcd.register.ly >= YRES as u8 {
                     lcd.lcds_mode_set(LCDMode::VBlank);
-                    self.int_flags.lock().unwrap().add_interrupt(InterruptType::VBlank);
+                    INTERRUPT_FLAGS.lock().unwrap().add_interrupt(InterruptType::VBlank);
 
                     if (lcd.lcds_stat_int(StatSrc::VBlank) != 0) {
-                        self.int_flags.lock().unwrap().add_interrupt(InterruptType::LcdStat);
+                        INTERRUPT_FLAGS.lock().unwrap().add_interrupt(InterruptType::LcdStat);
                     }
 
                     self.current_frame += 1;

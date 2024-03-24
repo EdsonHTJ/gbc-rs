@@ -39,8 +39,6 @@ pub struct EMU {
 
 #[derive(Clone)]
 pub struct GlobalContext {
-    pub int_flags: Arc<Mutex<IFlagsRegister>>,
-    pub ie_register: Arc<Mutex<IFlagsRegister>>,
     pub timer: Arc<Mutex<Timer>>,
     pub ppu: Option<Arc<Mutex<PPU>>>,
     pub io: Option<Arc<Mutex<IO>>>,
@@ -51,12 +49,8 @@ pub struct GlobalContext {
 
 impl GlobalContext {
     pub fn new() -> GlobalContext {
-        let int_flags = Arc::new(Mutex::new(IFlagsRegister::new()));
-        let ie_register = Arc::new(Mutex::new(IFlagsRegister::new()));
-        let timer = Arc::new(Mutex::new(Timer::new(int_flags.clone())));
+        let timer = Arc::new(Mutex::new(Timer::new()));
         let mut ctx = GlobalContext {
-            int_flags,
-            ie_register,
             timer: timer.clone(),
             io: None,
             bus: None,

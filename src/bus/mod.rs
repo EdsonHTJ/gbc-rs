@@ -4,7 +4,7 @@ mod writers;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use crate::bus::addresses::AddrSpace;
 use crate::cartridge::{Cartridge, CARTRIDGE_SINGLETON, CartridgeError};
-use crate::cpu::interrupts::IFlagsRegister;
+use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_ENABLE};
 use crate::dma::DMA;
 use crate::emu::GlobalContext;
 use crate::io::{IO, IoError};
@@ -84,7 +84,6 @@ pub struct BUS {
     ppu: Arc<Mutex<PPU>>,
     dma: Arc<Mutex<DMA>>,
     io: Arc<Mutex<IO>>,
-    interrupt_register: Arc<Mutex<IFlagsRegister>>,
 }
 
 impl BUS {
@@ -94,7 +93,6 @@ impl BUS {
             io: global_context.io.unwrap(),
             ppu: global_context.ppu.unwrap(),
             dma: global_context.dma.unwrap(),
-            interrupt_register: global_context.ie_register,
         }
     }
 
@@ -168,11 +166,11 @@ impl BUS {
     }
 
     fn read_from_master_interruption_register(&self) -> u8 {
-        self.interrupt_register.lock().unwrap().int_flags
+        INTERRUPT_ENABLE.lock().unwrap().int_flags
     }
 
     fn write_to_master_interruption_register(&mut self, data: u8) {
-        self.interrupt_register.lock().unwrap().int_flags = data;
+        INTERRUPT_ENABLE.lock().unwrap().int_flags = data;
     }
 
     fn read_from_io(&self, address: u16) -> Result<u8, BusError> {

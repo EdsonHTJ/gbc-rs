@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use crate::bus::{BusMutex};
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
-use crate::cpu::interrupts::IFlagsRegister;
+use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS};
 use crate::debug::{formatter, trace};
 use crate::emu::GlobalContext;
 use crate::instructions::{Instruction, RegType};
@@ -56,8 +56,6 @@ pub struct CPU {
     pub dest_is_mem: bool,
     pub current_instruction: Instruction,
     pub enable_ime: bool,
-    pub int_flags: Arc<Mutex<IFlagsRegister>>,
-    pub ie_register: Arc<Mutex<IFlagsRegister>>,
     pub interrupt_master_enable: bool,
     pub stopped: bool,
     pub bus: BusMutex,
@@ -78,8 +76,6 @@ impl CPU {
             current_instruction: Instruction::new(),
             enable_ime: false,
             stopped: false,
-            int_flags: global.int_flags.clone(),
-            ie_register: global.ie_register.clone(),
             interrupt_master_enable: false,
             previous_pc: ROM_HEADER_START as u16,
             tm: global.tick_manager.clone().unwrap(),
@@ -283,7 +279,7 @@ impl CPU {
             self.execute()?;
         } else {
             self.tm.cycle(1);
-            if self.int_flags.lock().unwrap().int_flags != 0 {
+            if INTERRUPT_FLAGS.lock().unwrap().int_flags != 0 {
                 self.halted = false;
             }
         }

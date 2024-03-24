@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use crate::cpu::interrupts::IFlagsRegister;
+use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS};
 use crate::dma::DMA;
 use crate::emu::GlobalContext;
 use crate::io::io_regions::IoRegions;
@@ -20,13 +20,11 @@ pub struct IO {
     pub serial_control: u8,
     pub serial_message: String,
     pub timer: Arc<Mutex<Timer>>,
-    pub int_flags: Arc<Mutex<IFlagsRegister>>,
 }
 
 impl IO {
     pub fn new(global: GlobalContext) -> IO {
         IO {
-            int_flags: global.int_flags.clone(),
             serial_data: 0,
             serial_control: 0,
             serial_message: String::new(),
@@ -46,7 +44,7 @@ impl IO {
             IoRegions::TimerCounter => Ok(self.timer.lock().unwrap().get_tima()),
             IoRegions::TimerModulo => Ok(self.timer.lock().unwrap().get_tma()),
             IoRegions::TimerControl => Ok(self.timer.lock().unwrap().get_tac()),
-            IoRegions::InterruptFlags => Ok(self.int_flags.lock().unwrap().int_flags),
+            IoRegions::InterruptFlags => Ok(INTERRUPT_FLAGS.lock().unwrap().int_flags),
             IoRegions::Lcd => {
                 Ok(LCD.lock().unwrap().lcd_read(address as u16))
             },
@@ -84,7 +82,7 @@ impl IO {
                 Ok(())
             },
             IoRegions::InterruptFlags => {
-                self.int_flags.lock().unwrap().int_flags = data;
+                INTERRUPT_FLAGS.lock().unwrap().int_flags = data;
                 Ok(())
             },
             IoRegions::Lcd => {

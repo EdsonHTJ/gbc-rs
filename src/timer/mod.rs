@@ -1,28 +1,26 @@
 use std::sync::{Arc, Mutex};
-use crate::cpu::interrupts::{IFlagsRegister, InterruptType};
+use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS, InterruptType};
 
 pub struct Timer {
     div: u16,
     tima: u8,
     tma: u8,
     tac: u8,
-    int_flags: Arc<Mutex<IFlagsRegister>>
 }
 
 impl Timer {
-    pub fn new(int_flags: Arc<Mutex<IFlagsRegister>>) -> Self {
+    pub fn new() -> Self {
         Timer {
             div: 0xAC00,
             tima: 0,
             tma: 0,
             tac: 0,
-            int_flags
         }
     }
 
     #[allow(dead_code)]
     pub fn reset(&mut self) {
-        let mut new_timer = Timer::new(self.int_flags.clone());
+        let mut new_timer = Timer::new();
         std::mem::swap(self, &mut new_timer);
     }
 
@@ -60,7 +58,7 @@ impl Timer {
             if self.tima == 0xFF {
                 self.tima = self.tma;
                 {
-                    self.int_flags.lock().unwrap().add_interrupt(InterruptType::Timer);
+                    INTERRUPT_FLAGS.lock().unwrap().add_interrupt(InterruptType::Timer);
                 }
             }
         }

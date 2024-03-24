@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use crate::cpu::error::CpuError;
 use crate::cpu::CPU;
 
@@ -42,6 +43,9 @@ impl InterruptType {
     }
 }
 
+pub static INTERRUPT_FLAGS : Mutex<IFlagsRegister> = Mutex::new(IFlagsRegister{int_flags: 0});
+pub static INTERRUPT_ENABLE : Mutex<IFlagsRegister> = Mutex::new(IFlagsRegister{int_flags: 0});
+
 #[derive(PartialEq)]
 pub struct IFlagsRegister {
     pub int_flags: u8,
@@ -79,12 +83,12 @@ impl CPU {
         addr: u16,
         interrupt_type: InterruptType,
     ) -> Result<bool, CpuError> {
-        let int_flags = self.int_flags.lock().unwrap().int_flags;
-        let ie_flags = self.ie_register.lock().unwrap().int_flags;
+        let int_flags = INTERRUPT_FLAGS.lock().unwrap().int_flags;
+        let ie_flags = INTERRUPT_ENABLE.lock().unwrap().int_flags;
 
         if interrupt_type.value_has_interrupt(int_flags as u32) && interrupt_type.value_has_interrupt(ie_flags as u32) {
             self.interrupt_handler(addr)?;
-            self.int_flags.lock().unwrap().remove_interrupt(interrupt_type);
+            INTERRUPT_FLAGS.lock().unwrap().remove_interrupt(interrupt_type);
             self.interrupt_master_enable = false;
             self.halted = false;
             return Ok(true);
