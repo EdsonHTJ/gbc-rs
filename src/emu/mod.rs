@@ -11,7 +11,7 @@ use crate::cpu::interrupts::IFlagsRegister;
 use crate::dma::DMA;
 use crate::io::IO;
 use crate::lcd::LCD;
-use crate::ppu::{PPU};
+use crate::ppu::{PPU, PPU_SINGLETON};
 use crate::tick::TickManager;
 use crate::timer::Timer;
 
@@ -31,7 +31,6 @@ pub struct EMU {
     pub tm: TickManager,
     pub bus: BusMutex,
     pub cpu: Arc<Mutex<CPU>>,
-    pub ppu: Arc<Mutex<PPU>>,
     pub gfx: Box<dyn Gfx>,
     pub debug_gfx: Box<dyn Gfx>,
     pub die: bool,
@@ -40,7 +39,6 @@ pub struct EMU {
 #[derive(Clone)]
 pub struct GlobalContext {
     pub timer: Arc<Mutex<Timer>>,
-    pub ppu: Option<Arc<Mutex<PPU>>>,
     pub io: Option<Arc<Mutex<IO>>>,
     pub bus: Option<BusMutex>,
     pub dma: Option<Arc<Mutex<DMA>>>,
@@ -56,14 +54,10 @@ impl GlobalContext {
             bus: None,
             dma: None,
             tick_manager: None,
-            ppu: None,
         };
 
         let dma = Arc::new(Mutex::new(DMA::new(ctx.clone())));
         ctx.dma = Some(dma.clone());
-
-        let ppu = Arc::new(Mutex::new(PPU::new(ctx.clone())));
-        ctx.ppu = Some(ppu.clone());
 
         let tick_manager = TickManager::new(timer.clone(), ctx.clone());
         ctx.tick_manager = Some(tick_manager.clone());
@@ -93,7 +87,6 @@ impl EMU {
             tm: ctx.tick_manager.clone().unwrap(),
             bus: ctx.bus.unwrap(),
             cpu,
-            ppu: ctx.ppu.unwrap(),
             gfx,
             debug_gfx,
         };
@@ -150,12 +143,12 @@ impl EMU {
         }
     }
 
-    fn display_tile(ppu: Arc<Mutex<PPU>>, gfx: &mut Box<dyn Gfx>, addr: u16, tile_num: u16, x: u32, y: u32) {
+    fn display_tile(gfx: &mut Box<dyn Gfx>, addr: u16, tile_num: u16, x: u32, y: u32) {
         let mut tile_addr = addr + (tile_num * 16);
         for i in 0..8 {
-            let byte1 = ppu.lock().unwrap().vram_read(tile_addr);
+            let byte1 = PPU_SINGLETON.lock().unwrap().vram_read(tile_addr);
             tile_addr += 1;
-            let byte2 = ppu.lock().unwrap().vram_read(tile_addr);
+            let byte2 = PPU_SINGLETON.lock().unwrap().vram_read(tile_addr);
             tile_addr += 1;
             for j in 0..8 {
                 let mut color = (byte1 >> (7 - j)) & 1;
@@ -180,7 +173,7 @@ impl EMU {
         let mut tile_num = 0;
         for i in 0..24 {
             for x in 0..16 {
-                EMU::display_tile(self.ppu.clone(),&mut self.debug_gfx, addr, tile_num, x_draw + (x * 8), i * 8);
+                EMU::display_tile(&mut self.debug_gfx, addr, tile_num, x_draw + (x * 8), i * 8);
                 tile_num += 1;
             }
         }

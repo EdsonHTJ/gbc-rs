@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use once_cell::sync::Lazy;
 use crate::cpu::CPU;
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS, InterruptType};
 use crate::emu::GlobalContext;
@@ -64,6 +65,10 @@ impl OAM {
     }
 }
 
+pub static PPU_SINGLETON: Lazy<Mutex<PPU>> = Lazy::new(|| {
+    Mutex::new(PPU::new())
+});
+
 #[derive(Clone)]
 pub struct PPU {
     oam_ram: [OAM; 40],
@@ -76,7 +81,7 @@ pub struct PPU {
 
 impl PPU {
 
-    pub fn new(global_context: GlobalContext) -> PPU {
+    pub fn new() -> PPU {
         PPU {
             oam_ram: [OAM::default(); 40],
             vram: [0; 0x2000],

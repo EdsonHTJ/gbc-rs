@@ -8,7 +8,7 @@ use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_ENABLE};
 use crate::dma::DMA;
 use crate::emu::GlobalContext;
 use crate::io::{IO, IoError};
-use crate::ppu::PPU;
+use crate::ppu::{PPU, PPU_SINGLETON};
 use crate::ram::{Ram, RamError};
 
 #[derive(Debug)]
@@ -81,7 +81,6 @@ impl BusMutex {
 
 pub struct BUS {
     ram: Ram,
-    ppu: Arc<Mutex<PPU>>,
     dma: Arc<Mutex<DMA>>,
     io: Arc<Mutex<IO>>,
 }
@@ -91,7 +90,6 @@ impl BUS {
         BUS {
             ram: Ram::new(),
             io: global_context.io.unwrap(),
-            ppu: global_context.ppu.unwrap(),
             dma: global_context.dma.unwrap(),
         }
     }
@@ -201,7 +199,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::OAM => self.ppu.lock().unwrap().oam_write(address, data),
+            AddrSpace::OAM => PPU_SINGLETON.lock().unwrap().oam_write(address, data),
             _ => return Err(BusError::InvalidAddress),
         }
 
@@ -216,7 +214,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::OAM => Ok(self.ppu.lock().unwrap().oam_read(address)),
+            AddrSpace::OAM => Ok(PPU_SINGLETON.lock().unwrap().oam_read(address)),
             _ => return Err(BusError::InvalidAddress),
         }
     }
@@ -225,7 +223,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::VRAM => self.ppu.lock().unwrap().vram_write(address, data),
+            AddrSpace::VRAM => PPU_SINGLETON.lock().unwrap().vram_write(address, data),
             _ => return Err(BusError::InvalidAddress),
         }
 
@@ -236,7 +234,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::VRAM => Ok(self.ppu.lock().unwrap().vram_read(address)),
+            AddrSpace::VRAM => Ok(PPU_SINGLETON.lock().unwrap().vram_read(address)),
             _ => return Err(BusError::InvalidAddress),
         }
     }

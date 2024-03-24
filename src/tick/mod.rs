@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 use crate::dma::DMA;
 use crate::emu::GlobalContext;
-use crate::ppu::PPU;
 use crate::timer::Timer;
 
 #[derive(Debug)]
@@ -14,7 +13,6 @@ pub struct TickManager {
     pub ticks: Arc<Mutex<u64>>,
     pub timer: Arc<Mutex<Timer>>,
     pub dma : Arc<Mutex<DMA>>,
-    pub ppu: Arc<Mutex<PPU>>,
 }
 
 impl TickManager {
@@ -23,7 +21,6 @@ impl TickManager {
             ticks: Arc::new(Mutex::new(0)),
             timer,
             dma: global_context.dma.unwrap(),
-            ppu: global_context.ppu.unwrap()
         }
     }
 
