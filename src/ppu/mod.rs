@@ -72,28 +72,24 @@ pub struct PPU {
     current_frame: u32,
     line_ticks: u32,
     video_buffer: [u32; (XRES * YRES) as usize],
-    lcd: Arc<Mutex<LCD>>,
     int_flags: Arc<Mutex<IFlagsRegister>>,
 }
 
 impl PPU {
 
     pub fn new(global_context: GlobalContext) -> PPU {
-        let lcd = global_context.lcd.unwrap();
-        lcd.lock().unwrap().lcds_mode_set(LCDMode::OAM);
         PPU {
             oam_ram: [OAM::default(); 40],
             vram: [0; 0x2000],
             current_frame: 0,
             line_ticks: 0,
             video_buffer: [0; (XRES * YRES) as usize],
-            lcd,
             int_flags: global_context.int_flags.clone(),
         }
     }
 
     pub fn increment_ly(&mut self) {
-        let mut lcd = self.lcd.lock().unwrap();
+        let mut lcd = LCD.lock().unwrap();
 
         if lcd.register.ly == lcd.register.ly_compare {
             lcd.lcds_lyc_set(true);
@@ -107,7 +103,7 @@ impl PPU {
 
     pub fn ppu_mode_oam(&mut self) {
         if self.line_ticks >= 80 {
-            self.lcd.lock().unwrap().lcds_mode_set(LCDMode::PixelTransfer);
+            LCD.lock().unwrap().lcds_mode_set(LCDMode::PixelTransfer);
         }
     }
 
@@ -115,7 +111,7 @@ impl PPU {
         if self.line_ticks >= (TICKS_PER_LINE) as u32 {
             self.increment_ly();
             {
-                let mut lcd = self.lcd.lock().unwrap();
+                let mut lcd = LCD.lock().unwrap();
                 if lcd.register.ly >= LINES_PER_FRAME {
                     lcd.lcds_mode_set(LCDMode::OAM);
                     lcd.register.ly = 0;
@@ -130,7 +126,7 @@ impl PPU {
         if self.line_ticks >= (TICKS_PER_LINE) as u32 {
             self.increment_ly();
             {
-                let mut lcd = self.lcd.lock().unwrap();
+                let mut lcd = LCD.lock().unwrap();
                 if lcd.register.ly >= YRES as u8 {
                     lcd.lcds_mode_set(LCDMode::VBlank);
                     self.int_flags.lock().unwrap().add_interrupt(InterruptType::VBlank);
@@ -155,13 +151,13 @@ impl PPU {
 
     pub fn ppu_mode_pixel_transfer(&mut self) {
         if self.line_ticks >= (0x80 + 172) {
-            self.lcd.lock().unwrap().lcds_mode_set(LCDMode::HBlank);
+            LCD.lock().unwrap().lcds_mode_set(LCDMode::HBlank);
         }
     }
 
     pub fn ppu_tick(&mut self) {
         self.line_ticks += 1;
-        let lcd_mode = self.lcd.lock().unwrap().lcds_mode_flag();
+        let lcd_mode = LCD.lock().unwrap().lcds_mode_flag();
         match lcd_mode {
             LCDMode::HBlank => {
                 self.ppu_mode_hblank();

@@ -43,7 +43,6 @@ pub struct GlobalContext {
     pub ie_register: Arc<Mutex<IFlagsRegister>>,
     pub timer: Arc<Mutex<Timer>>,
     pub ppu: Option<Arc<Mutex<PPU>>>,
-    pub lcd: Option<Arc<Mutex<LCD>>>,
     pub io: Option<Arc<Mutex<IO>>>,
     pub bus: Option<BusMutex>,
     pub dma: Option<Arc<Mutex<DMA>>>,
@@ -64,14 +63,10 @@ impl GlobalContext {
             dma: None,
             tick_manager: None,
             ppu: None,
-            lcd: None,
         };
 
         let dma = Arc::new(Mutex::new(DMA::new(ctx.clone())));
         ctx.dma = Some(dma.clone());
-
-        let lcd = Arc::new(Mutex::new(LCD::new(dma.clone())));
-        ctx.lcd = Some(lcd.clone());
 
         let ppu = Arc::new(Mutex::new(PPU::new(ctx.clone())));
         ctx.ppu = Some(ppu.clone());
@@ -84,9 +79,6 @@ impl GlobalContext {
 
         let bus = BusMutex::new(ctx.clone());
         ctx.bus = Some(bus.clone());
-
-        dma.lock().unwrap().attach_bus(bus.clone());
-        dma.lock().unwrap().attach_ppu(ppu.clone());
 
         ctx
     }

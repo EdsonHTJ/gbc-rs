@@ -21,7 +21,6 @@ pub struct IO {
     pub serial_message: String,
     pub timer: Arc<Mutex<Timer>>,
     pub int_flags: Arc<Mutex<IFlagsRegister>>,
-    pub lcd: Arc<Mutex<LCD>>,
 }
 
 impl IO {
@@ -32,7 +31,6 @@ impl IO {
             serial_control: 0,
             serial_message: String::new(),
             timer: global.timer.clone(),
-            lcd: global.lcd.unwrap(),
         }
     }
 
@@ -50,7 +48,7 @@ impl IO {
             IoRegions::TimerControl => Ok(self.timer.lock().unwrap().get_tac()),
             IoRegions::InterruptFlags => Ok(self.int_flags.lock().unwrap().int_flags),
             IoRegions::Lcd => {
-                Ok(self.lcd.lock().unwrap().lcd_read(address as u16))
+                Ok(LCD.lock().unwrap().lcd_read(address as u16))
             },
             _ => Ok(0),
         }
@@ -90,7 +88,7 @@ impl IO {
                 Ok(())
             },
             IoRegions::Lcd => {
-                self.lcd.lock().unwrap().lcd_write(address as u16, data);
+                LCD.lock().unwrap().lcd_write(address as u16, data);
                 Ok(())
             },
 

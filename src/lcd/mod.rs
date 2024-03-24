@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use once_cell::sync::Lazy;
 use crate::dma::DMA;
 use crate::util;
 
@@ -30,15 +31,6 @@ pub enum StatSrc {
 }
 
 impl StatSrc {
-    pub fn from_u8(value: u8) -> StatSrc {
-        match value {
-            0b100 => StatSrc::HBlank,
-            0b1000 => StatSrc::VBlank,
-            0b10000 => StatSrc::OAM,
-            0b100000 => StatSrc::LYC,
-            _ => StatSrc::HBlank,
-        }
-    }
 
     pub fn to_u8(&self) -> u8 {
         match self {
@@ -68,12 +60,15 @@ pub struct LcdRegisters {
     pub sp2_colors: [u32; 4],
 }
 
+pub static LCD: Lazy<Mutex<LCD>> = Lazy::new(|| {
+    Mutex::new(LCD::new())
+});
+
 pub struct LCD {
     pub register: LcdRegisters,
-    pub dma: Arc<Mutex<DMA>>,
 }
 
-const colors_default: [u32; 4] = [
+const COLORS_DEFAULT: [u32; 4] = [
     0xFF_FF_FF_FF,
     0xFF_AA_AA_AA,
     0xFF_55_55_55,
@@ -81,7 +76,7 @@ const colors_default: [u32; 4] = [
 ];
 
 impl LCD {
-    pub fn new(dma: Arc<Mutex<DMA>>) -> LCD {
+    pub fn new() -> LCD {
         let reg = LcdRegisters {
             lcdc: 0x91,
             lcds: 0,
@@ -94,14 +89,13 @@ impl LCD {
             obj_palette: [0xFF, 0xFF],
             wy: 0,
             wx: 0,
-            bg_colors: colors_default.clone(),
-            sp1_colors: colors_default.clone(),
-            sp2_colors: colors_default.clone(),
+            bg_colors: COLORS_DEFAULT.clone(),
+            sp1_colors: COLORS_DEFAULT.clone(),
+            sp2_colors: COLORS_DEFAULT.clone(),
         };
 
         LCD {
             register: reg,
-            dma,
         }
     }
 
@@ -187,22 +181,22 @@ impl LCD {
     pub fn update_palette(&mut self, data: u8, pal: u8) {
         match pal {
             0 => {
-                self.register.bg_colors[0] = colors_default[(data & 0b11) as usize];
-                self.register.bg_colors[1] = colors_default[((data >> 2) & 0b11) as usize];
-                self.register.bg_colors[2] = colors_default[((data >> 4) & 0b11) as usize];
-                self.register.bg_colors[3] = colors_default[((data >> 6) & 0b11) as usize];
+                self.register.bg_colors[0] = COLORS_DEFAULT[(data & 0b11) as usize];
+                self.register.bg_colors[1] = COLORS_DEFAULT[((data >> 2) & 0b11) as usize];
+                self.register.bg_colors[2] = COLORS_DEFAULT[((data >> 4) & 0b11) as usize];
+                self.register.bg_colors[3] = COLORS_DEFAULT[((data >> 6) & 0b11) as usize];
             }
             1 => {
-                self.register.sp1_colors[0] = colors_default[(data & 0b11) as usize];
-                self.register.sp1_colors[1] = colors_default[((data >> 2) & 0b11) as usize];
-                self.register.sp1_colors[2] = colors_default[((data >> 4) & 0b11) as usize];
-                self.register.sp1_colors[3] = colors_default[((data >> 6) & 0b11) as usize];
+                self.register.sp1_colors[0] = COLORS_DEFAULT[(data & 0b11) as usize];
+                self.register.sp1_colors[1] = COLORS_DEFAULT[((data >> 2) & 0b11) as usize];
+                self.register.sp1_colors[2] = COLORS_DEFAULT[((data >> 4) & 0b11) as usize];
+                self.register.sp1_colors[3] = COLORS_DEFAULT[((data >> 6) & 0b11) as usize];
             }
             2 => {
-                self.register.sp2_colors[0] = colors_default[(data & 0b11) as usize];
-                self.register.sp2_colors[1] = colors_default[((data >> 2) & 0b11) as usize];
-                self.register.sp2_colors[2] = colors_default[((data >> 4) & 0b11) as usize];
-                self.register.sp2_colors[3] = colors_default[((data >> 6) & 0b11) as usize];
+                self.register.sp2_colors[0] = COLORS_DEFAULT[(data & 0b11) as usize];
+                self.register.sp2_colors[1] = COLORS_DEFAULT[((data >> 2) & 0b11) as usize];
+                self.register.sp2_colors[2] = COLORS_DEFAULT[((data >> 4) & 0b11) as usize];
+                self.register.sp2_colors[3] = COLORS_DEFAULT[((data >> 6) & 0b11) as usize];
             }
             _ => {}
         }
@@ -224,7 +218,7 @@ impl LCD {
 
         match address {
             0x06 => {
-                self.dma.lock().unwrap().dma_start(data);
+                DMA.lock().unwrap().dma_start(data);
             }
             0x07 => {
                 self.update_palette(data, 0);

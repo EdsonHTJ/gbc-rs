@@ -8,7 +8,7 @@ pub struct SDL {
 }
 
 impl SDL {
-    pub fn new(w: u32, h: u32, isDebug: bool) -> Result<SDL, GfxError> {
+    pub fn new(w: u32, h: u32, is_debug: bool) -> Result<SDL, GfxError> {
         let sdl_context = match sdl2::init() {
             Ok(sdl_context) => sdl_context,
             Err(e) => return Err(GfxError::InitError(e.to_string())),
@@ -19,7 +19,7 @@ impl SDL {
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
         
-        let window_name = match isDebug {
+        let window_name = match is_debug {
             true => "gba-rs-debug",
             false => "gba-rs",
         };
@@ -39,7 +39,7 @@ impl SDL {
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
 
-        if isDebug {
+        if is_debug {
             return Ok(SDL { canvas, event_pump: None, sdl_context });
         }
         let event_pump = match sdl_context.event_pump() {
