@@ -1,7 +1,7 @@
 use crate::bus::{self, BUS_SINGLETON};
 use crate::cpu::interrupts::{IFlagsRegister, InterruptType, INTERRUPT_FLAGS};
 use crate::cpu::CPU;
-use crate::debug::log::{Logger, LoggerTrait};
+use crate::debug::log::{self, Logger, LoggerTrait};
 use crate::lcd::{self, LCDMode, StatSrc, LCD};
 use crate::tick::TickManager;
 use once_cell::sync::Lazy;
@@ -18,9 +18,9 @@ const CGB_PALLETE_NUMBER_MASK: u8 = 0x03;
 
 const LINES_PER_FRAME: u8 = 154;
 const TICKS_PER_LINE: u32 = 456;
-const YRES: u8 = 144;
-const XRES: u8 = 160;
-const FULL_RES: u32 = (XRES as u32) * (YRES as u32);
+pub const YRES: u8 = 144;
+pub const XRES: u8 = 160;
+pub const FULL_RES: u32 = (XRES as u32) * (YRES as u32);
 
 const TARGET_FRAME_TIME: u32 = 1000 / 60;
 
@@ -158,6 +158,10 @@ impl PPU {
         self.current_frame
     }
 
+    pub fn get_video_buffer(&self) -> &[u32; FULL_RES as usize] {
+        &self.video_buffer
+    }
+
     pub fn increment_ly(&mut self) {
         let mut lcd = LCD.lock().unwrap();
         lcd.register.ly += 1;
@@ -178,6 +182,12 @@ impl PPU {
     pub fn ppu_mode_oam(&mut self) {
         if self.line_ticks >= 80 {
             LCD.lock().unwrap().lcds_mode_set(LCDMode::PixelTransfer);
+
+            self.pixel_fifo_context.current_fetch_state = FetchState::FsTile;
+            self.pixel_fifo_context.line_x = 0;
+            self.pixel_fifo_context.pushed_x = 0;
+            self.pixel_fifo_context.fetch_x = 0;
+            self.pixel_fifo_context.fifo_x = 0;
         }
     }
 
@@ -332,6 +342,8 @@ impl PPU {
         if address >= 0x8000 {
             address -= 0x8000;
         }
+        //log::Logger::log(format!("VRAM Write: {:#X} {:#X}\n", address + 0x8000, data));
+
         VRAM.lock().unwrap()[address as usize] = data;
     }
 
@@ -339,6 +351,9 @@ impl PPU {
         if address >= 0x8000 {
             address -= 0x8000;
         }
+
+        //log::Logger::log(format!("VRAM Read: {:#X}", address + 0x8000));
+
         VRAM.lock().unwrap()[address as usize]
     }
 
@@ -395,7 +410,7 @@ impl PPU {
 
             let color = lcd.register.bg_colors[sum as usize];
 
-            if x > 0 {
+            if x >= 0 {
                 self.pixel_fifo_push(color);
                 self.pixel_fifo_context.fifo_x += 1;
             }
@@ -415,12 +430,13 @@ impl PPU {
 
                     self.pixel_fifo_context.bgw_fetch_data[0] = bus.read(addr).unwrap();
                     if lcd.lcdc_bgw_data_area() == 0x8800 {
-                        self.pixel_fifo_context.bgw_fetch_data[0] += 128;
+                        self.pixel_fifo_context.bgw_fetch_data[0] =
+                            self.pixel_fifo_context.bgw_fetch_data[0].wrapping_add(128);
                     }
                 }
 
                 self.pixel_fifo_context.current_fetch_state = FetchState::FsData0;
-                self.pixel_fifo_context.fetch_x += 8;
+                self.pixel_fifo_context.fetch_x = self.pixel_fifo_context.fetch_x.wrapping_add(8);
             }
             FetchState::FsData0 => {
                 let mut bus = BUS_SINGLETON.lock().unwrap();
@@ -475,8 +491,11 @@ impl PPU {
     fn pipeline_process(&mut self) {
         {
             let lcd = LCD.lock().unwrap();
-            self.pixel_fifo_context.map_y = lcd.register.ly + lcd.register.scroll_y;
-            self.pixel_fifo_context.map_x = self.pixel_fifo_context.fetch_x + lcd.register.scroll_x;
+            self.pixel_fifo_context.map_y = lcd.register.ly.wrapping_add(lcd.register.scroll_y);
+            self.pixel_fifo_context.map_x = self
+                .pixel_fifo_context
+                .fetch_x
+                .wrapping_add(lcd.register.scroll_x);
             self.pixel_fifo_context.tile_y = (self.pixel_fifo_context.map_y % 8) * 2;
         }
 

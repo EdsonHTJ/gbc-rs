@@ -21,8 +21,6 @@ pub enum AddrSpace {
     ROM0,
     ROM1,
     VRAM,
-    BG1,
-    BG2,
     CRAM,
     RAM0,
     RAM1,
@@ -39,9 +37,7 @@ impl AddrSpace {
         match self {
             AddrSpace::ROM0 => (0x0000, 0x3FFF),
             AddrSpace::ROM1 => (0x4000, 0x7FFF),
-            AddrSpace::VRAM => (0x8000, 0x97FF),
-            AddrSpace::BG1 => (0x9800, 0x9BFF),
-            AddrSpace::BG2 => (0x9C00, 0x9FFF),
+            AddrSpace::VRAM => (0x8000, 0x9FFF),
             AddrSpace::CRAM => (0xA000, 0xBFFF),
             AddrSpace::RAM0 => (0xC000, 0xCFFF),
             AddrSpace::RAM1 => (0xD000, 0xDFFF),
@@ -59,9 +55,7 @@ impl AddrSpace {
         let region = match address {
             0x0000..=0x3FFF => AddrSpace::ROM0,
             0x4000..=0x7FFF => AddrSpace::ROM1,
-            0x8000..=0x97FF => AddrSpace::VRAM,
-            0x9800..=0x9BFF => AddrSpace::BG1,
-            0x9C00..=0x9FFF => AddrSpace::BG2,
+            0x8000..=0x9FFF => AddrSpace::VRAM,
             0xA000..=0xBFFF => AddrSpace::CRAM,
             0xC000..=0xCFFF => AddrSpace::RAM0,
             0xD000..=0xDFFF => AddrSpace::RAM1,
@@ -76,7 +70,6 @@ impl AddrSpace {
 
         Ok(region)
     }
-
 
     pub fn get_region_offset(address: u16) -> Result<u16, BusError> {
         let region = AddrSpace::from_address(&address)?;

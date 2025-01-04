@@ -90,6 +90,17 @@ impl EMU {
 
     fn update_window(&mut self) {
         self.gfx.present();
+        self.gfx.clear(Color::from_hex(0x111111));
+
+        let binding = PPU_SINGLETON.lock().unwrap();
+        let video_buffer = binding.get_video_buffer();
+        for line_num in 0..ppu::YRES {
+            for x in 0..ppu::XRES {
+                let color = video_buffer[x as usize + (line_num as usize * ppu::XRES as usize)];
+                let gfx_color = Color::from_hex(color);
+                Self::draw_chunk(&mut self.gfx, x as u32, line_num as u32, gfx_color);
+            }
+        }
     }
 
     fn draw_chunk(gfx: &mut Box<dyn Gfx>, x: u32, y: u32, color: Color) {
@@ -166,12 +177,10 @@ impl EMU {
     }
 
     fn ui_update(&mut self) {
-        //canvas.clear();
         self.update_window();
-        self.update_debug_window();
-        // The rest of the game loop goes here...
 
-        self.gfx.present();
+        self.update_debug_window();
+        //self.gfx.present();
     }
 
     fn ui_handle_events(&mut self) {

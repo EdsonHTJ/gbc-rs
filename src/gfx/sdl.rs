@@ -1,6 +1,6 @@
-use std::sync::Mutex;
 use crate::gfx::color::Color;
 use crate::gfx::{Gfx, GfxError, UserEvents};
+use std::sync::Mutex;
 
 pub struct SDL {
     pub canvas: sdl2::render::Canvas<sdl2::video::Window>,
@@ -19,7 +19,7 @@ impl SDL {
             Ok(video_subsystem) => video_subsystem,
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
-        
+
         let window_name = match is_debug {
             true => "gba-rs-debug",
             false => "gba-rs",
@@ -41,14 +41,22 @@ impl SDL {
         };
 
         if is_debug {
-            return Ok(SDL { canvas, event_pump: None, sdl_context });
+            return Ok(SDL {
+                canvas,
+                event_pump: None,
+                sdl_context,
+            });
         }
         let event_pump = match sdl_context.event_pump() {
             Ok(event_pump) => event_pump,
             Err(e) => return Err(GfxError::InitError(e.to_string())),
         };
 
-        Ok(SDL { canvas, event_pump: Some(event_pump), sdl_context})
+        Ok(SDL {
+            canvas,
+            event_pump: Some(event_pump),
+            sdl_context,
+        })
     }
 
     pub(crate) fn get_ticks() -> u32 {
@@ -94,7 +102,9 @@ impl Gfx for SDL {
     }
 
     fn get_user_events(&mut self) -> Vec<UserEvents> {
-        self.event_pump.as_mut().unwrap()
+        self.event_pump
+            .as_mut()
+            .unwrap()
             .poll_iter()
             .map(|event| match event {
                 sdl2::event::Event::Quit { .. } => UserEvents::Quit,
@@ -105,5 +115,23 @@ impl Gfx for SDL {
                 _ => UserEvents::Unknown,
             })
             .collect()
+    }
+
+    fn draw_rect(
+        &mut self,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+        color: Color,
+    ) -> Result<(), GfxError> {
+        self.canvas.set_draw_color(color);
+        return match self
+            .canvas
+            .draw_rect(sdl2::rect::Rect::new(x, y, width, height))
+        {
+            Ok(_) => Ok(()),
+            Err(e) => Err(GfxError::DrawError(e.to_string())),
+        };
     }
 }

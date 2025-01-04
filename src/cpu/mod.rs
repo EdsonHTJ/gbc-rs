@@ -5,15 +5,15 @@ pub mod interrupts;
 mod processors;
 mod stack;
 
-
-use std::sync::{Arc, Mutex};
 use crate::bus::BUS_SINGLETON;
 use crate::cartridge::ROM_HEADER_START;
 use crate::cpu::error::CpuError;
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS};
+use crate::debug::log::{Logger, LoggerTrait};
 use crate::debug::{formatter, trace};
 use crate::instructions::{Instruction, RegType};
-use crate::tick::{TICKER_SINGLETON, TickManager};
+use crate::tick::{TickManager, TICKER_SINGLETON};
+use std::sync::{Arc, Mutex};
 
 pub struct CpuRegisters {
     pub a: u8,
@@ -229,11 +229,7 @@ impl CPU {
         Ok(val)
     }
 
-    pub fn cpu_write_r8(
-        &mut self,
-        reg: Option<RegType>,
-        value: u8,
-    ) -> Result<(), CpuError> {
+    pub fn cpu_write_r8(&mut self, reg: Option<RegType>, value: u8) -> Result<(), CpuError> {
         let reg = match reg {
             None => return Err(CpuError::InvalidRegister),
             Some(r) => r,
@@ -270,7 +266,7 @@ impl CPU {
             //Logger::log_cpu_state_with_instruction(&self);
             let log = formatter::format_cpu_state(&self);
             trace::Trace::log_static(log.clone());
-           // println!("{}", log);
+            //println!("{}", log);
             self.execute()?;
         } else {
             self.cycle(1);
@@ -279,8 +275,7 @@ impl CPU {
             }
         }
 
-        if self.interrupt_master_enable
-        {
+        if self.interrupt_master_enable {
             self.handler_interrupts()?;
             self.enable_ime = false;
         }
@@ -291,5 +286,4 @@ impl CPU {
 
         Ok(())
     }
-
 }

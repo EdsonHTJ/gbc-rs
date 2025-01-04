@@ -32,9 +32,15 @@ impl CPU {
             if RegType::is_some_16_bit(self.current_instruction.reg_2) {
                 cycles += 1;
                 self.cycle(1);
-                BUS_SINGLETON.lock().unwrap().write_16(self.mem_dest, self.fetch_data)?;
+                BUS_SINGLETON
+                    .lock()
+                    .unwrap()
+                    .write_16(self.mem_dest, self.fetch_data)?;
             } else {
-                BUS_SINGLETON.lock().unwrap().write(self.mem_dest, self.fetch_data as u8)?;
+                BUS_SINGLETON
+                    .lock()
+                    .unwrap()
+                    .write(self.mem_dest, self.fetch_data as u8)?;
             }
             cycles += 1;
             self.cycle(1);
@@ -55,7 +61,9 @@ impl CPU {
 
             let val_to_write = self
                 .read_register_r2()?
-                .wrapping_add_signed(i8::from_be_bytes((self.fetch_data as u8).to_be_bytes()) as i16);
+                .wrapping_add_signed(
+                    i8::from_be_bytes((self.fetch_data as u8).to_be_bytes()) as i16
+                );
             self.write_register_r1(val_to_write)?;
 
             return Ok(cycles);
@@ -83,10 +91,16 @@ impl CPU {
         if self.current_instruction.reg_1 == Some(RegType::RtA) {
             self.write_register(
                 self.current_instruction.reg_1,
-                BUS_SINGLETON.lock().unwrap().read(0xFF00 | self.fetch_data)? as u16,
+                BUS_SINGLETON
+                    .lock()
+                    .unwrap()
+                    .read(0xFF00 | self.fetch_data)? as u16,
             )?;
         } else {
-            BUS_SINGLETON.lock().unwrap().write(0xFF00 | self.mem_dest, self.registers.a)?;
+            BUS_SINGLETON
+                .lock()
+                .unwrap()
+                .write(0xFF00 | self.mem_dest, self.registers.a)?;
         }
 
         self.cycle(1);
@@ -185,9 +199,16 @@ impl CPU {
         if (self.current_instruction.reg_1 == Some(RegType::RtHl))
             && (self.current_instruction.mode == AddrMode::AmMr)
         {
-            value = (BUS_SINGLETON.lock().unwrap().read(self.read_register_r1()?)? + 1) as u16;
+            value = (BUS_SINGLETON
+                .lock()
+                .unwrap()
+                .read(self.read_register_r1()?)?
+                + 1) as u16;
             value &= 0xFF;
-            BUS_SINGLETON.lock().unwrap().write(self.read_register_r1()?, value as u8)?;
+            BUS_SINGLETON
+                .lock()
+                .unwrap()
+                .write(self.read_register_r1()?, value as u8)?;
         } else {
             self.write_register_r1(value)?;
             value = self.read_register_r1()?;
@@ -217,9 +238,16 @@ impl CPU {
         if (self.current_instruction.reg_1 == Some(RegType::RtHl))
             && (self.current_instruction.mode == AddrMode::AmMr)
         {
-            value = (BUS_SINGLETON.lock().unwrap().read(self.read_register_r1()?)?.wrapping_add_signed(-1)) as u16;
+            value = (BUS_SINGLETON
+                .lock()
+                .unwrap()
+                .read(self.read_register_r1()?)?
+                .wrapping_add_signed(-1)) as u16;
             value &= 0xFF;
-            BUS_SINGLETON.lock().unwrap().write(self.read_register_r1()?, value as u8)?;
+            BUS_SINGLETON
+                .lock()
+                .unwrap()
+                .write(self.read_register_r1()?, value as u8)?;
         } else {
             self.write_register_r1(value)?;
             value = self.read_register_r1()?;
@@ -266,7 +294,7 @@ impl CPU {
 
         if is_16_bit {
             z = FlagMode::None;
-            let val_h = self.read_register_r1()? & 0xFFF + self.fetch_data & 0xFFF >= 0x1000;
+            let val_h = (self.read_register_r1()? & 0xFFF) + (self.fetch_data & 0xFFF) >= 0x1000;
             h = FlagMode::from(val_h);
 
             let n = self.read_register_r1()? as u32 + self.fetch_data as u32;
@@ -575,7 +603,7 @@ impl CPU {
             u = 0x06;
         }
 
-        if self.get_c_flag() || ((!self.get_n_flag() && self.registers.a > 0x99)) {
+        if self.get_c_flag() || (!self.get_n_flag() && self.registers.a > 0x99) {
             u |= 0x60;
             fc = true;
         }

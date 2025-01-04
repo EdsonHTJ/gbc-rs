@@ -16,7 +16,6 @@ impl CPU {
     pub fn fetch_data(&mut self) -> Result<u32, CpuError> {
         self.mem_dest = 0;
         self.dest_is_mem = false;
-
         return match self.current_instruction.mode {
             AddrMode::AmImp => Ok(0),
             AddrMode::AmR => {
@@ -66,10 +65,15 @@ impl CPU {
 
                 self.fetch_data = BUS_SINGLETON.lock().unwrap().read(addr)? as u16;
                 self.cycle(1);
+
                 Ok(1)
             }
             AddrMode::AmRHli => {
-                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(self.read_register(Some(RegType::RtHl))?)? as u16;
+                self.fetch_data = BUS_SINGLETON
+                    .lock()
+                    .unwrap()
+                    .read(self.read_register(Some(RegType::RtHl))?)?
+                    as u16;
                 self.cycle(1);
                 self.write_register(
                     Some(RegType::RtHl),
@@ -78,7 +82,11 @@ impl CPU {
                 Ok(1)
             }
             AddrMode::AmRHld => {
-                self.fetch_data = BUS_SINGLETON.lock().unwrap().read(self.read_register(Some(RegType::RtHl))?)? as u16;
+                self.fetch_data = BUS_SINGLETON
+                    .lock()
+                    .unwrap()
+                    .read(self.read_register(Some(RegType::RtHl))?)?
+                    as u16;
                 self.cycle(1);
                 self.write_register(
                     Some(RegType::RtHl),
@@ -160,8 +168,11 @@ impl CPU {
             AddrMode::AmMr => {
                 self.mem_dest = self.read_register(self.current_instruction.reg_1)?;
                 self.dest_is_mem = true;
-                self.fetch_data =
-                    BUS_SINGLETON.lock().unwrap().read(self.read_register(self.current_instruction.reg_1)?)? as u16;
+                self.fetch_data = BUS_SINGLETON
+                    .lock()
+                    .unwrap()
+                    .read(self.read_register(self.current_instruction.reg_1)?)?
+                    as u16;
                 self.cycle(1);
                 Ok(1)
             }

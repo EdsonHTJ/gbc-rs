@@ -18,8 +18,11 @@ mod util;
 
 fn main() {
     let mut emu = emu::EMU::default();
-    let filename = "./games/tetris.gb".to_string();
-    //et filename = "./games/01-special.gb".to_string();
+    //let filename = "./games/dmg-acid2.gb".to_string();
+    let filename = "./games/03-op sp,hl.gb".to_string();
+    //let filename = ".games/04-op r,imm.gb".to_string();
+
+    //let filename = "./games/01-special.gb".to_string();
     emu.load_game(filename);
     emu.run();
     println!("EMU is paused: {}", emu.paused);

@@ -1,7 +1,7 @@
-use std::sync::{Arc, Mutex};
-use once_cell::sync::Lazy;
 use crate::dma::DMA;
 use crate::util;
+use once_cell::sync::Lazy;
+use std::sync::{Arc, Mutex};
 
 pub enum LCDMode {
     HBlank,
@@ -31,7 +31,6 @@ pub enum StatSrc {
 }
 
 impl StatSrc {
-
     pub fn to_u8(&self) -> u8 {
         match self {
             StatSrc::HBlank => 0b100,
@@ -60,20 +59,13 @@ pub struct LcdRegisters {
     pub sp2_colors: [u32; 4],
 }
 
-pub static LCD: Lazy<Mutex<LCD>> = Lazy::new(|| {
-    Mutex::new(LCD::new())
-});
+pub static LCD: Lazy<Mutex<LCD>> = Lazy::new(|| Mutex::new(LCD::new()));
 
 pub struct LCD {
     pub register: LcdRegisters,
 }
 
-const COLORS_DEFAULT: [u32; 4] = [
-    0xFF_FF_FF_FF,
-    0xFF_AA_AA_AA,
-    0xFF_55_55_55,
-    0xFF_00_00_00,
-];
+const COLORS_DEFAULT: [u32; 4] = [0xFF_FF_FF_FF, 0xFF_AA_AA_AA, 0xFF_55_55_55, 0xFF_00_00_00];
 
 impl LCD {
     pub fn new() -> LCD {
@@ -94,9 +86,7 @@ impl LCD {
             sp2_colors: COLORS_DEFAULT.clone(),
         };
 
-        LCD {
-            register: reg,
-        }
+        LCD { register: reg }
     }
 
     pub fn lcdc_bgw_enabled(&self) -> bool {
@@ -165,7 +155,10 @@ impl LCD {
 
     pub fn lcd_read(&self, mut address: u16) -> u8 {
         unsafe {
-            let lcd_buff = std::slice::from_raw_parts(&self.register as *const LcdRegisters as *const u8, std::mem::size_of::<LcdRegisters>());
+            let lcd_buff = std::slice::from_raw_parts(
+                &self.register as *const LcdRegisters as *const u8,
+                std::mem::size_of::<LcdRegisters>(),
+            );
             if address >= 0xFF40 {
                 address -= 0xFF40;
             }
@@ -204,7 +197,10 @@ impl LCD {
 
     pub fn lcd_write(&mut self, mut address: u16, data: u8) {
         unsafe {
-            let mut lcd_buff = std::slice::from_raw_parts_mut(&self.register as *const LcdRegisters as *mut u8, std::mem::size_of::<LcdRegisters>());
+            let mut lcd_buff = std::slice::from_raw_parts_mut(
+                &self.register as *const LcdRegisters as *mut u8,
+                std::mem::size_of::<LcdRegisters>(),
+            );
             if address >= 0xFF40u16 {
                 address -= 0xFF40;
             }
@@ -233,6 +229,3 @@ impl LCD {
         }
     }
 }
-
-
-
