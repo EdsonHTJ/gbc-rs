@@ -1,9 +1,9 @@
-use std::sync::{Arc, Mutex, MutexGuard};
 use crate::dma::DMA;
 use crate::ppu::PPU_SINGLETON;
 use crate::timer::{Timer, TIMER_SINGLETON};
+use std::sync::{Arc, Mutex, MutexGuard};
 
-pub static TICKER_SINGLETON: Mutex<TickManager> = Mutex::new(TickManager{ticks: 0});
+pub static TICKER_SINGLETON: Mutex<TickManager> = Mutex::new(TickManager { ticks: 0 });
 
 #[derive(Clone)]
 pub struct TickManager {
@@ -12,9 +12,7 @@ pub struct TickManager {
 
 impl TickManager {
     pub fn new() -> TickManager {
-        TickManager {
-            ticks: 0,
-        }
+        TickManager { ticks: 0 }
     }
 
     pub fn cycle(&mut self, _cycles: u32) {
@@ -28,10 +26,8 @@ impl TickManager {
             }
 
             DMA.lock().unwrap().dma_tick();
-
         }
     }
-
 
     #[allow(dead_code)]
     pub fn increment_ticks(&mut self) {
@@ -46,4 +42,3 @@ impl TickManager {
         self.ticks = new_ticks;
     }
 }
-

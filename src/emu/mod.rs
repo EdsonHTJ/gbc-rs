@@ -1,19 +1,18 @@
-
-use std::sync::{Arc, Mutex};
-use std::thread;
-use crate::cpu::{CPU};
-use crate::gfx::color::Color;
-use crate::gfx::Gfx;
-use std::time::Duration;
 use crate::cartridge::{Cartridge, CARTRIDGE_SINGLETON};
 use crate::cpu::interrupts::IFlagsRegister;
+use crate::cpu::CPU;
 use crate::dma::DMA;
-use crate::gfx;
+use crate::gfx::color::Color;
+use crate::gfx::Gfx;
 use crate::io::IO;
 use crate::lcd::LCD;
 use crate::ppu::{PPU, PPU_SINGLETON};
-use crate::tick::{TICKER_SINGLETON, TickManager};
+use crate::tick::{TickManager, TICKER_SINGLETON};
 use crate::timer::Timer;
+use crate::{gfx, ppu};
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 
 const SCALE: u32 = 4;
 
@@ -34,10 +33,9 @@ pub struct EMU {
     pub die: bool,
 }
 
-
 impl EMU {
     pub fn default() -> EMU {
-        let gfx  = gfx::get_gfx(WIDTH, HEIGHT, false).unwrap();
+        let gfx = gfx::get_gfx(WIDTH, HEIGHT, false).unwrap();
         let debug_gfx = gfx::get_gfx(DEBUG_W, DEBUG_H, true).unwrap();
 
         let cpu = Arc::new(Mutex::new(CPU::new()));
@@ -50,7 +48,6 @@ impl EMU {
             gfx,
             debug_gfx,
         };
-
 
         emu
     }
@@ -98,7 +95,8 @@ impl EMU {
     fn draw_chunk(gfx: &mut Box<dyn Gfx>, x: u32, y: u32, color: Color) {
         for i in 0..SCALE {
             for j in 0..SCALE {
-                gfx.draw_pixel((x * SCALE + i) as i32, (y * SCALE + j) as i32, color).unwrap();
+                gfx.draw_pixel((x * SCALE + i) as i32, (y * SCALE + j) as i32, color)
+                    .unwrap();
             }
         }
     }
@@ -106,9 +104,9 @@ impl EMU {
     fn display_tile(gfx: &mut Box<dyn Gfx>, addr: u16, tile_num: u16, x: u32, y: u32) {
         let mut tile_addr = addr + (tile_num * 16);
         for i in 0..8 {
-            let byte1 = PPU_SINGLETON.lock().unwrap().vram_read(tile_addr);
+            let byte1 = ppu::PPU::vram_read(tile_addr);
             tile_addr += 1;
-            let byte2 = PPU_SINGLETON.lock().unwrap().vram_read(tile_addr);
+            let byte2 = ppu::PPU::vram_read(tile_addr);
             tile_addr += 1;
             for j in 0..8 {
                 let mut color = (byte1 >> (7 - j)) & 1;
@@ -168,7 +166,6 @@ impl EMU {
     }
 
     fn ui_update(&mut self) {
-
         //canvas.clear();
         self.update_window();
         self.update_debug_window();

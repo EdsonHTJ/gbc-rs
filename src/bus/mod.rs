@@ -1,15 +1,15 @@
 mod addresses;
 mod writers;
 
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
-use once_cell::sync::Lazy;
 use crate::bus::addresses::AddrSpace;
-use crate::cartridge::{Cartridge, CARTRIDGE_SINGLETON, CartridgeError};
+use crate::cartridge::{Cartridge, CartridgeError, CARTRIDGE_SINGLETON};
 use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_ENABLE};
 use crate::dma::DMA;
-use crate::io::{IO, IO_SINGLETON, IoError};
-use crate::ppu::{PPU, PPU_SINGLETON};
+use crate::io::{IoError, IO, IO_SINGLETON};
+use crate::ppu::{self, PPU, PPU_SINGLETON};
 use crate::ram::{Ram, RamError};
+use once_cell::sync::Lazy;
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 #[derive(Debug)]
 pub enum BusError {
@@ -46,9 +46,7 @@ pub struct BUS {
 
 impl BUS {
     pub fn new() -> BUS {
-        BUS {
-            ram: Ram::new(),
-        }
+        BUS { ram: Ram::new() }
     }
 
     pub fn read(&mut self, address: u16) -> Result<u8, BusError> {
@@ -97,10 +95,10 @@ impl BUS {
     fn read_from_ram(&self, address: u16) -> Result<u8, BusError> {
         let region = AddrSpace::from_address(&address)?;
         match region {
-            AddrSpace::RAM0 | AddrSpace::RAM1 =>  {
+            AddrSpace::RAM0 | AddrSpace::RAM1 => {
                 let (start, _) = AddrSpace::RAM0.get_region();
                 Ok(self.ram.read_wram(address - start)?)
-            },
+            }
             AddrSpace::ZP => Ok(self.ram.read_hram(AddrSpace::get_region_offset(address)?)?),
             _ => Err(BusError::InvalidAddress),
         }
@@ -109,11 +107,13 @@ impl BUS {
     fn write_to_ram(&mut self, address: u16, data: u8) -> Result<(), BusError> {
         let region = AddrSpace::from_address(&address)?;
         match region {
-            AddrSpace::RAM0 | AddrSpace::RAM1 =>  {
-                let (start, _ ) = AddrSpace::RAM0.get_region();
+            AddrSpace::RAM0 | AddrSpace::RAM1 => {
+                let (start, _) = AddrSpace::RAM0.get_region();
                 self.ram.write_wram(address - start, data)?
-            },
-            AddrSpace::ZP => self.ram.write_hram(AddrSpace::get_region_offset(address)?, data)?,
+            }
+            AddrSpace::ZP => self
+                .ram
+                .write_hram(AddrSpace::get_region_offset(address)?, data)?,
             _ => return Err(BusError::InvalidAddress),
         }
 
@@ -141,7 +141,10 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::IO => IO_SINGLETON.lock().unwrap().write((address &0xFF) as u8, data)?,
+            AddrSpace::IO => IO_SINGLETON
+                .lock()
+                .unwrap()
+                .write((address & 0xFF) as u8, data)?,
             _ => return Err(BusError::InvalidAddress),
         }
 
@@ -180,7 +183,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::VRAM => PPU_SINGLETON.lock().unwrap().vram_write(address, data),
+            AddrSpace::VRAM => ppu::PPU::vram_write(address, data),
             _ => return Err(BusError::InvalidAddress),
         }
 
@@ -191,7 +194,7 @@ impl BUS {
         let region = AddrSpace::from_address(&address)?;
         let address = AddrSpace::get_region_offset(address)?;
         match region {
-            AddrSpace::VRAM => Ok(PPU_SINGLETON.lock().unwrap().vram_read(address)),
+            AddrSpace::VRAM => Ok(ppu::PPU::vram_read(address)),
             _ => return Err(BusError::InvalidAddress),
         }
     }

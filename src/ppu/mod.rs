@@ -1,11 +1,13 @@
+use crate::bus::{self, BUS_SINGLETON};
+use crate::cpu::interrupts::{IFlagsRegister, InterruptType, INTERRUPT_FLAGS};
+use crate::cpu::CPU;
+use crate::debug::log::{Logger, LoggerTrait};
+use crate::lcd::{self, LCDMode, StatSrc, LCD};
+use crate::tick::TickManager;
+use once_cell::sync::Lazy;
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use once_cell::sync::Lazy;
-use crate::cpu::CPU;
-use crate::cpu::interrupts::{IFlagsRegister, INTERRUPT_FLAGS, InterruptType};
-use crate::debug::log::{Logger, LoggerTrait};
-use crate::lcd::{LCD, LCDMode, StatSrc};
-use crate::tick::TickManager;
 
 const BG_WINDOW_MASK: u8 = 1 << 7;
 const Y_FLIP_MASK: u8 = 1 << 6;
@@ -16,20 +18,74 @@ const CGB_PALLETE_NUMBER_MASK: u8 = 0x03;
 
 const LINES_PER_FRAME: u8 = 154;
 const TICKS_PER_LINE: u32 = 456;
-const YRES: u32 = 144;
-const XRES: u32 = 160;
+const YRES: u8 = 144;
+const XRES: u8 = 160;
+const FULL_RES: u32 = (XRES as u32) * (YRES as u32);
 
-const TARGET_FRAME_TIME: u32 = 1000/60;
+const TARGET_FRAME_TIME: u32 = 1000 / 60;
+
+#[derive(Clone, Copy)]
+pub enum FetchState {
+    FsTile,
+    FsData0,
+    FsData1,
+    FsIdle,
+    FsPush,
+}
 
 #[derive(Clone)]
-#[derive(Copy)]
+pub struct Fifo {
+    queue: Arc<Mutex<VecDeque<u32>>>,
+}
+
+impl Fifo {
+    pub fn new() -> Fifo {
+        Fifo {
+            queue: Arc::new(Mutex::new(VecDeque::new())),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct PixelFifoContext {
+    pub current_fetch_state: FetchState,
+    pub pixel_fifo: Fifo,
+    pub line_x: u8,
+    pub pushed_x: u8,
+    pub fetch_x: u8,
+    pub bgw_fetch_data: [u8; 3],
+    pub fetch_entry_data: [u8; 6],
+    pub map_y: u8,
+    pub map_x: u8,
+    pub tile_y: u8,
+    pub fifo_x: u8,
+}
+
+impl PixelFifoContext {
+    pub fn new() -> PixelFifoContext {
+        PixelFifoContext {
+            current_fetch_state: FetchState::FsTile,
+            pixel_fifo: Fifo::new(),
+            line_x: 0,
+            pushed_x: 0,
+            fetch_x: 0,
+            bgw_fetch_data: [0; 3],
+            fetch_entry_data: [0; 6],
+            map_y: 0,
+            map_x: 0,
+            tile_y: 0,
+            fifo_x: 0,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct OAM {
     pub y: u8,
     pub x: u8,
     pub tile: u8,
     pub flags: u8,
 }
-
 
 impl OAM {
     pub fn default() -> OAM {
@@ -66,38 +122,35 @@ impl OAM {
     }
 }
 
-pub static PPU_SINGLETON: Lazy<Mutex<PPU>> = Lazy::new(|| {
-    Mutex::new(PPU::new())
-});
+pub static PPU_SINGLETON: Lazy<Mutex<PPU>> = Lazy::new(|| Mutex::new(PPU::new()));
+pub static VRAM: Lazy<Mutex<[u8; 0x2000]>> = Lazy::new(|| Mutex::new([0; 0x2000]));
 
 #[derive(Clone)]
 pub struct PPU {
     oam_ram: [OAM; 40],
-    vram: [u8; 0x2000],
-
     current_frame: u32,
     line_ticks: u32,
-    video_buffer: [u32; (XRES * YRES) as usize],
+    video_buffer: [u32; FULL_RES as usize],
     previous_frame_time: u32,
     target_frame_time: u32,
     start_timer: u32,
     frame_count: u32,
+    pixel_fifo_context: PixelFifoContext,
 }
 
 impl PPU {
-
     pub fn new() -> PPU {
         LCD.lock().unwrap().lcds_mode_set(LCDMode::OAM);
         PPU {
             oam_ram: [OAM::default(); 40],
-            vram: [0; 0x2000],
             current_frame: 0,
             line_ticks: 0,
-            video_buffer: [0; (XRES * YRES) as usize],
+            video_buffer: [0; FULL_RES as usize],
             previous_frame_time: 0,
             target_frame_time: TARGET_FRAME_TIME,
             start_timer: 0,
             frame_count: 0,
+            pixel_fifo_context: PixelFifoContext::new(),
         }
     }
 
@@ -111,10 +164,13 @@ impl PPU {
 
         if lcd.register.ly == lcd.register.ly_compare {
             lcd.lcds_lyc_set(true);
-            if (lcd.lcds_stat_int(StatSrc::LYC) != 0) {
-                INTERRUPT_FLAGS.lock().unwrap().add_interrupt(InterruptType::LcdStat)
+            if lcd.lcds_stat_int(StatSrc::LYC) != 0 {
+                INTERRUPT_FLAGS
+                    .lock()
+                    .unwrap()
+                    .add_interrupt(InterruptType::LcdStat)
             }
-        }else {
+        } else {
             lcd.lcds_lyc_set(false);
         }
     }
@@ -147,17 +203,26 @@ impl PPU {
                 let mut lcd = LCD.lock().unwrap();
                 if lcd.register.ly >= YRES as u8 {
                     lcd.lcds_mode_set(LCDMode::VBlank);
-                    INTERRUPT_FLAGS.lock().unwrap().add_interrupt(InterruptType::VBlank);
+                    INTERRUPT_FLAGS
+                        .lock()
+                        .unwrap()
+                        .add_interrupt(InterruptType::VBlank);
 
-                    if (lcd.lcds_stat_int(StatSrc::VBlank) != 0) {
-                        INTERRUPT_FLAGS.lock().unwrap().add_interrupt(InterruptType::LcdStat);
+                    if lcd.lcds_stat_int(StatSrc::VBlank) != 0 {
+                        INTERRUPT_FLAGS
+                            .lock()
+                            .unwrap()
+                            .add_interrupt(InterruptType::LcdStat);
                     }
 
                     self.current_frame += 1;
 
                     //Calc fps
 
-                    let end = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u32;
+                    let end = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis() as u32;
                     let frame_time = end - self.previous_frame_time;
 
                     if frame_time < self.target_frame_time {
@@ -174,9 +239,11 @@ impl PPU {
                     }
 
                     self.frame_count += 1;
-                    self.previous_frame_time =  std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u32;
-
-                }else {
+                    self.previous_frame_time = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis() as u32;
+                } else {
                     lcd.lcds_mode_set(LCDMode::OAM);
                 }
             }
@@ -186,8 +253,20 @@ impl PPU {
     }
 
     pub fn ppu_mode_pixel_transfer(&mut self) {
-        if self.line_ticks >= (0x80 + 172) {
-            LCD.lock().unwrap().lcds_mode_set(LCDMode::HBlank);
+        self.pipeline_process();
+        if self.pixel_fifo_context.pushed_x >= (XRES) {
+            self.pipeline_fifo_reset();
+            {
+                let mut lcd = LCD.lock().unwrap();
+                lcd.lcds_mode_set(LCDMode::HBlank);
+
+                if lcd.lcds_stat_int(StatSrc::HBlank) != 0 {
+                    INTERRUPT_FLAGS
+                        .lock()
+                        .unwrap()
+                        .add_interrupt(InterruptType::LcdStat);
+                }
+            }
         }
     }
 
@@ -212,7 +291,7 @@ impl PPU {
 
     pub fn read(&self, address: u16) -> u8 {
         match address {
-            0x8000..=0x9FFF => self.vram[(address - 0x8000) as usize],
+            0x8000..=0x9FFF => VRAM.lock().unwrap()[address as usize - 0x8000],
             0xFE00..=0xFE9F => {
                 let oam_index = (address - 0xFE00) as usize / 4;
                 match (address - 0xFE00) % 4 {
@@ -222,7 +301,7 @@ impl PPU {
                     3 => self.oam_ram[oam_index].flags,
                     _ => 0,
                 }
-            },
+            }
             _ => 0,
         }
     }
@@ -234,7 +313,7 @@ impl PPU {
             1 => self.oam_ram[oam_index].x = data,
             2 => self.oam_ram[oam_index].tile = data,
             3 => self.oam_ram[oam_index].flags = data,
-            _ => {},
+            _ => {}
         }
     }
 
@@ -249,13 +328,162 @@ impl PPU {
         }
     }
 
-    pub fn vram_write(&mut self, address: u16, data: u8) {
-        self.vram[(address) as usize] = data;
+    pub fn vram_write(mut address: u16, data: u8) {
+        if address >= 0x8000 {
+            address -= 0x8000;
+        }
+        VRAM.lock().unwrap()[address as usize] = data;
     }
 
-    pub fn vram_read(&self, address: u16) -> u8 {
-        self.vram[(address) as usize]
+    pub fn vram_read(mut address: u16) -> u8 {
+        if address >= 0x8000 {
+            address -= 0x8000;
+        }
+        VRAM.lock().unwrap()[address as usize]
     }
 
+    fn pipeline_fifo_reset(&mut self) {
+        self.pixel_fifo_context
+            .pixel_fifo
+            .queue
+            .lock()
+            .unwrap()
+            .clear();
+    }
+
+    fn pixel_fifo_push(&mut self, pixel: u32) {
+        self.pixel_fifo_context
+            .pixel_fifo
+            .queue
+            .lock()
+            .unwrap()
+            .push_back(pixel);
+    }
+
+    fn pixel_fifo_pop(&mut self) -> u32 {
+        self.pixel_fifo_context
+            .pixel_fifo
+            .queue
+            .lock()
+            .unwrap()
+            .pop_front()
+            .unwrap()
+    }
+
+    fn pixel_fifo_size(&self) -> usize {
+        self.pixel_fifo_context
+            .pixel_fifo
+            .queue
+            .lock()
+            .unwrap()
+            .len()
+    }
+
+    fn pipeline_fifo_add(&mut self) -> bool {
+        if self.pixel_fifo_size() > 8 {
+            return false;
+        }
+
+        let lcd = LCD.lock().unwrap();
+        let x = self.pixel_fifo_context.fetch_x - (8 - lcd.register.scroll_x % 8);
+
+        for i in 0..8 {
+            let bit = 7 - i;
+            let lo = (self.pixel_fifo_context.bgw_fetch_data[1] >> bit) & 1;
+            let hi = (self.pixel_fifo_context.bgw_fetch_data[2] >> bit) & 1;
+            let sum = (hi << 1) | lo;
+
+            let color = lcd.register.bg_colors[sum as usize];
+
+            if x > 0 {
+                self.pixel_fifo_push(color);
+                self.pixel_fifo_context.fifo_x += 1;
+            }
+        }
+        return true;
+    }
+
+    fn pipeline_fetch(&mut self) {
+        match self.pixel_fifo_context.current_fetch_state {
+            FetchState::FsTile => {
+                let lcd = LCD.lock().unwrap();
+                if lcd.lcdc_bgw_enabled() {
+                    let mut bus = BUS_SINGLETON.lock().unwrap();
+                    let addr = lcd.lcdc_bg_map_area()
+                        + (self.pixel_fifo_context.map_x as u16) / 8
+                        + ((self.pixel_fifo_context.map_y as u16) / 8) * 32;
+
+                    self.pixel_fifo_context.bgw_fetch_data[0] = bus.read(addr).unwrap();
+                    if lcd.lcdc_bgw_data_area() == 0x8800 {
+                        self.pixel_fifo_context.bgw_fetch_data[0] += 128;
+                    }
+                }
+
+                self.pixel_fifo_context.current_fetch_state = FetchState::FsData0;
+                self.pixel_fifo_context.fetch_x += 8;
+            }
+            FetchState::FsData0 => {
+                let mut bus = BUS_SINGLETON.lock().unwrap();
+                let lcd = LCD.lock().unwrap();
+
+                let addr = lcd.lcdc_bgw_data_area()
+                    + (self.pixel_fifo_context.bgw_fetch_data[0] as u16) * 16
+                    + self.pixel_fifo_context.tile_y as u16;
+
+                self.pixel_fifo_context.bgw_fetch_data[1] = bus.read(addr).unwrap();
+                self.pixel_fifo_context.current_fetch_state = FetchState::FsData1;
+            }
+            FetchState::FsData1 => {
+                let mut bus = BUS_SINGLETON.lock().unwrap();
+                let lcd = LCD.lock().unwrap();
+
+                let addr = lcd.lcdc_bgw_data_area()
+                    + (self.pixel_fifo_context.bgw_fetch_data[0] as u16) * 16
+                    + (self.pixel_fifo_context.tile_y + 1) as u16;
+
+                self.pixel_fifo_context.bgw_fetch_data[2] = bus.read(addr).unwrap();
+                self.pixel_fifo_context.current_fetch_state = FetchState::FsIdle;
+            }
+            FetchState::FsIdle => self.pixel_fifo_context.current_fetch_state = FetchState::FsPush,
+            FetchState::FsPush => {
+                if self.pipeline_fifo_add() {
+                    self.pixel_fifo_context.current_fetch_state = FetchState::FsTile;
+                }
+            }
+        }
+    }
+
+    fn pipeline_push_pixel(&mut self) {
+        if self.pixel_fifo_size() > 8 {
+            let pixel_data = self.pixel_fifo_pop();
+
+            {
+                let lcd = LCD.lock().unwrap();
+                if self.pixel_fifo_context.line_x >= lcd.register.scroll_x % 8 {
+                    let buffer_pos = self.pixel_fifo_context.pushed_x as usize
+                        + (lcd.register.ly as usize * XRES as usize);
+                    self.video_buffer[buffer_pos] = pixel_data;
+
+                    self.pixel_fifo_context.pushed_x += 1;
+                }
+
+                self.pixel_fifo_context.line_x += 1;
+            }
+        }
+    }
+
+    fn pipeline_process(&mut self) {
+        {
+            let lcd = LCD.lock().unwrap();
+            self.pixel_fifo_context.map_y = lcd.register.ly + lcd.register.scroll_y;
+            self.pixel_fifo_context.map_x = self.pixel_fifo_context.fetch_x + lcd.register.scroll_x;
+            self.pixel_fifo_context.tile_y = (self.pixel_fifo_context.map_y % 8) * 2;
+        }
+
+        if self.line_ticks & 1 == 0 {
+            self.pipeline_fetch();
+        }
+
+        self.pipeline_push_pixel();
+    }
 }
-
